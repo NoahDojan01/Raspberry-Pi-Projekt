@@ -9,33 +9,34 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "^15.3.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "@supabase/supabase-js": "^2.106.1",
-    "@supabase/ssr": "^0.10.3",
     "@anthropic-ai/sdk": "^0.24.3",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.106.1",
+    "@types/canvas-confetti": "^1.6.4",
+    "@vercel/speed-insights": "^2.0.0",
+    "canvas-confetti": "^1.9.3",
+    "clsx": "^2.1.1",
     "framer-motion": "^11.1.9",
     "lucide-react": "^0.378.0",
-    "clsx": "^2.1.1",
-    "tailwind-merge": "^2.3.0",
+    "next": "^15.3.2",
+    "pdf-parse": "^1.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-hot-toast": "^2.4.1",
     "recharts": "^2.12.7",
-    "canvas-confetti": "^1.9.3",
-    "@types/canvas-confetti": "^1.6.4",
-    "pdf-parse": "^1.1.1"
+    "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
+    "@tailwindcss/forms": "^0.5.7",
     "@types/node": "^20.12.7",
+    "@types/pdf-parse": "^1.1.4",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
-    "@types/pdf-parse": "^1.1.4",
-    "tailwindcss": "^3.4.3",
-    "@tailwindcss/forms": "^0.5.7",
     "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^15.3.2"
+    "eslint-config-next": "^15.3.2",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.4.5"
   }
 }
