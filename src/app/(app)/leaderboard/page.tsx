@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Users, Plus, X, Loader2, Crown,
-  Flame, Star, Target, Copy, Check, Pencil, AlertTriangle
+  Flame, Star, Target, Copy, Check, Pencil, AlertTriangle, ArrowRight
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils/helpers'
@@ -24,14 +24,7 @@ interface LeaderboardEntry {
 
 const GROUP_ID_REGEX = /^[A-Za-z0-9]{8}$/
 
-const MIGRATION_SQL = `ALTER TABLE public.user_profiles
-  ADD COLUMN IF NOT EXISTS group_ids text[] DEFAULT '{}';
-ALTER TABLE public.user_profiles
-  ADD COLUMN IF NOT EXISTS group_names jsonb DEFAULT '{}';
-CREATE INDEX IF NOT EXISTS idx_user_profiles_group_ids
-  ON public.user_profiles USING GIN(group_ids);`
-
-function MigrationBanner({ sql }: { sql: string }) {
+function MigrationBanner({ title, sql }: { title: string; sql: string }) {
   const [copied, setCopied] = useState(false)
 
   function copySQL() {
@@ -51,8 +44,7 @@ function MigrationBanner({ sql }: { sql: string }) {
         <div>
           <h3 className="font-bold text-amber-300">Datenbank-Migration erforderlich</h3>
           <p className="text-sm text-white/60 mt-1">
-            Die Gruppen-Funktion benötigt zwei neue Spalten in deiner Supabase-Datenbank.
-            Öffne den <strong className="text-white/80">Supabase SQL Editor</strong> und führe
+            {title} Öffne den <strong className="text-white/80">Supabase SQL Editor</strong> und führe
             folgenden Code aus:
           </p>
         </div>
@@ -70,7 +62,7 @@ function MigrationBanner({ sql }: { sql: string }) {
         </button>
       </div>
       <p className="text-xs text-white/40">
-        Danach einmal die Seite neu laden — dann funktionieren Gruppen auf allen Geräten.
+        Danach einmal die Seite neu laden.
       </p>
     </motion.div>
   )
@@ -82,8 +74,7 @@ export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [loadingBoard, setLoadingBoard] = useState(false)
-  const [migrationNeeded, setMigrationNeeded] = useState(false)
-  const [migrationSQL, setMigrationSQL] = useState('')
+  const [migrationError, setMigrationError] = useState<{ title: string; sql: string } | null>(null)
 
   // Favorites
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
@@ -92,7 +83,8 @@ export default function LeaderboardPage() {
   // Join form
   const [joinId, setJoinId] = useState('')
   const [joinName, setJoinName] = useState('')
-  const [adding, setAdding] = useState(false)
+  // 'idle' = show form; 'needsName' = new group, waiting for name; 'joining' = loading
+  const [joinStep, setJoinStep] = useState<'idle' | 'needsName' | 'joining'>('idle')
   const [showForm, setShowForm] = useState(false)
 
   // Rename
@@ -108,8 +100,18 @@ export default function LeaderboardPage() {
       fetch('/api/favorites').then(r => r.json()),
     ]).then(([groupData, favData]) => {
       if (groupData.error === 'migration_needed') {
-        setMigrationNeeded(true)
-        setMigrationSQL(groupData.sql ?? MIGRATION_SQL)
+        setMigrationError({
+          title: 'Die Gruppen-Spalten fehlen noch in der Datenbank.',
+          sql: groupData.sql,
+        })
+      } else if (groupData.error === 'groups_table_missing' || groupData.needsGroupsTableMigration) {
+        setMigrationError({
+          title: 'Die gemeinsame Gruppen-Tabelle fehlt noch.',
+          sql: groupData.sql,
+        })
+        const list: Group[] = groupData.groups ?? []
+        setGroups(list)
+        if (list.length) setSelectedId(list[0].id)
       } else {
         const list: Group[] = groupData.groups ?? []
         setGroups(list)
@@ -134,38 +136,61 @@ export default function LeaderboardPage() {
     if (selectedId) fetchLeaderboard(selectedId)
   }, [selectedId, fetchLeaderboard])
 
-  async function addGroup() {
+  function resetJoinForm() {
+    setJoinId('')
+    setJoinName('')
+    setJoinStep('idle')
+    setShowForm(false)
+  }
+
+  async function submitJoin() {
     const id = joinId.trim().toUpperCase()
-    const name = joinName.trim()
     if (!GROUP_ID_REGEX.test(id)) {
       toast.error('ID muss genau 8 Buchstaben oder Zahlen sein')
       return
     }
-    if (!name) { toast.error('Bitte einen Gruppennamen eingeben'); return }
 
-    setAdding(true)
+    // In needsName step: name is required
+    if (joinStep === 'needsName' && !joinName.trim()) {
+      toast.error('Bitte einen Gruppennamen eingeben')
+      return
+    }
+
+    setJoinStep('joining')
+
+    const body: Record<string, string> = { groupId: id }
+    if (joinStep === 'needsName') body.name = joinName.trim()
+
     const res = await fetch('/api/groups', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ groupId: id, name }),
+      body: JSON.stringify(body),
     })
     const data = await res.json()
+
     if (!res.ok) {
       if (data.error === 'migration_needed') {
-        setMigrationNeeded(true)
-        setMigrationSQL(data.sql ?? MIGRATION_SQL)
+        setMigrationError({ title: 'Die Gruppen-Spalten fehlen noch.', sql: data.sql })
+      } else if (data.error === 'groups_table_missing') {
+        setMigrationError({ title: 'Die gemeinsame Gruppen-Tabelle fehlt noch.', sql: data.sql })
       } else {
         toast.error(data.error)
       }
-    } else {
-      setGroups(data.groups)
-      setSelectedId(id)
-      setJoinId('')
-      setJoinName('')
-      setShowForm(false)
-      toast.success(`Gruppe "${name}" beigetreten!`)
+      setJoinStep(joinStep === 'needsName' ? 'needsName' : 'idle')
+      return
     }
-    setAdding(false)
+
+    if (data.needsName) {
+      // New group: ask for a name
+      setJoinStep('needsName')
+      return
+    }
+
+    // Successfully joined
+    setGroups(data.groups)
+    setSelectedId(id)
+    toast.success(`Gruppe "${data.joinedName}" beigetreten!`)
+    resetJoinForm()
   }
 
   async function renameGroup(id: string) {
@@ -181,6 +206,7 @@ export default function LeaderboardPage() {
     } else {
       setGroups(data.groups)
       setEditingId(null)
+      toast.success('Gruppenname aktualisiert')
     }
   }
 
@@ -243,155 +269,202 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Migration Banner */}
-      {migrationNeeded && <MigrationBanner sql={migrationSQL} />}
+      {migrationError && (
+        <MigrationBanner title={migrationError.title} sql={migrationError.sql} />
+      )}
 
       {/* Group management card */}
-      {!migrationNeeded && (
-        <div className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-bold flex items-center gap-2 text-white/80">
-              <Users size={18} className="text-violet-400" />
-              Meine Gruppen
-            </h2>
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-all',
-                showForm
-                  ? 'bg-white/10 border-white/20 text-white/60'
-                  : 'bg-violet-500/15 border-violet-500/30 text-violet-300 hover:bg-violet-500/20'
-              )}
-            >
-              <Plus size={14} />
-              Gruppe beitreten
-            </button>
-          </div>
+      <div className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold flex items-center gap-2 text-white/80">
+            <Users size={18} className="text-violet-400" />
+            Meine Gruppen
+          </h2>
+          <button
+            onClick={() => { setShowForm((v) => !v); setJoinStep('idle'); setJoinId(''); setJoinName('') }}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-all',
+              showForm
+                ? 'bg-white/10 border-white/20 text-white/60'
+                : 'bg-violet-500/15 border-violet-500/30 text-violet-300 hover:bg-violet-500/20'
+            )}
+          >
+            <Plus size={14} />
+            Gruppe beitreten
+          </button>
+        </div>
 
-          {/* Join form */}
-          <AnimatePresence>
-            {showForm && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-3 overflow-hidden"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1.5">Gruppenname</label>
-                    <input
-                      value={joinName}
-                      onChange={(e) => setJoinName(e.target.value)}
-                      placeholder="z.B. Jugendrüstzeit 2025"
-                      className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/40 mb-1.5">Gruppen-ID (8 Zeichen)</label>
-                    <input
-                      value={joinId}
-                      onChange={(e) => setJoinId(e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8))}
-                      onKeyDown={(e) => e.key === 'Enter' && addGroup()}
-                      placeholder="z.B. FECG2025"
-                      maxLength={8}
-                      className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm font-mono tracking-widest uppercase"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-white/30">
-                  Die ID ist der gemeinsame Code — alle, die dieselbe ID eingeben, sehen sich gegenseitig. Der Name ist nur für dich sichtbar.
-                </p>
+        {/* Join form */}
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-3 overflow-hidden"
+            >
+              {/* Step 1: enter ID */}
+              <div>
+                <label className="block text-xs text-white/40 mb-1.5">
+                  Gruppen-ID (8 Zeichen)
+                </label>
                 <div className="flex gap-2">
+                  <input
+                    value={joinId}
+                    onChange={(e) => {
+                      setJoinId(e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8))
+                      if (joinStep === 'needsName') setJoinStep('idle')
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && joinStep !== 'needsName' && submitJoin()}
+                    placeholder="z.B. FECG2025"
+                    maxLength={8}
+                    disabled={joinStep === 'joining'}
+                    className="flex-1 px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm font-mono tracking-widest uppercase disabled:opacity-50"
+                  />
+                  {joinStep !== 'needsName' && (
+                    <motion.button
+                      onClick={submitJoin}
+                      disabled={joinStep === 'joining' || joinId.length !== 8}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    >
+                      {joinStep === 'joining'
+                        ? <Loader2 size={15} className="animate-spin" />
+                        : <ArrowRight size={15} />
+                      }
+                      Prüfen
+                    </motion.button>
+                  )}
+                </div>
+                <p className="text-xs text-white/30 mt-1.5">
+                  Alle, die dieselbe ID eingeben, sehen sich gegenseitig im Leaderboard.
+                </p>
+              </div>
+
+              {/* Step 2: name input (only for new groups) */}
+              <AnimatePresence>
+                {joinStep === 'needsName' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm text-emerald-300">
+                      <Star size={14} className="shrink-0" />
+                      Neue Gruppe! Du bist der Erste – gib ihr einen Namen:
+                    </div>
+                    <div>
+                      <label className="block text-xs text-white/40 mb-1.5">Gruppenname</label>
+                      <input
+                        value={joinName}
+                        onChange={(e) => setJoinName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && submitJoin()}
+                        placeholder="z.B. Jugendrüstzeit 2025"
+                        autoFocus
+                        className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm"
+                      />
+                    </div>
+                    <p className="text-xs text-white/30">
+                      Dieser Name ist für alle sichtbar, die derselben Gruppe beitreten.
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex gap-2">
+                {joinStep === 'needsName' && (
                   <motion.button
-                    onClick={addGroup}
-                    disabled={adding || joinId.length !== 8 || !joinName.trim()}
+                    onClick={submitJoin}
+                    disabled={!joinName.trim()}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                    Beitreten
+                    <Plus size={15} />
+                    Gruppe erstellen & beitreten
                   </motion.button>
+                )}
+                <button
+                  onClick={resetJoinForm}
+                  className="px-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white/50 hover:text-white/80 transition-colors"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Group list */}
+        {loadingGroups ? (
+          <div className="flex items-center gap-2 text-white/30 text-sm py-2">
+            <Loader2 size={14} className="animate-spin" />
+            Lade Gruppen...
+          </div>
+        ) : groups.length === 0 ? (
+          <p className="text-white/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
+        ) : (
+          <div className="space-y-2">
+            {groups.map((g) => (
+              <div
+                key={g.id}
+                onClick={() => setSelectedId(g.id)}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all',
+                  selectedId === g.id
+                    ? 'bg-violet-500/15 border-violet-500/30'
+                    : 'glass border-white/5 hover:border-white/15'
+                )}
+              >
+                {editingId === g.id ? (
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') renameGroup(g.id); if (e.key === 'Escape') setEditingId(null) }}
+                    onClick={(e) => e.stopPropagation()}
+                    autoFocus
+                    className="flex-1 bg-transparent border-b border-violet-500/50 text-white text-sm focus:outline-none py-0.5"
+                  />
+                ) : (
+                  <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-violet-200' : 'text-white/70')}>
+                    {g.name}
+                  </span>
+                )}
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-xs font-mono text-white/25 mr-1">{g.id}</span>
+
                   <button
-                    onClick={() => setShowForm(false)}
-                    className="px-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white/50 hover:text-white/80 transition-colors"
+                    onClick={(e) => { e.stopPropagation(); copyId(g.id) }}
+                    className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-all"
+                    title="ID kopieren"
                   >
-                    Abbrechen
+                    {copied === g.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  </button>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingId(g.id); setEditName(g.name) }}
+                    className="p-1.5 rounded-lg text-white/25 hover:text-violet-400 hover:bg-white/5 transition-all"
+                    title="Umbenennen (für alle sichtbar)"
+                  >
+                    <Pencil size={13} />
+                  </button>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeGroup(g.id) }}
+                    className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    title="Gruppe verlassen"
+                  >
+                    <X size={13} />
                   </button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Group list */}
-          {loadingGroups ? (
-            <div className="flex items-center gap-2 text-white/30 text-sm py-2">
-              <Loader2 size={14} className="animate-spin" />
-              Lade Gruppen...
-            </div>
-          ) : groups.length === 0 ? (
-            <p className="text-white/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
-          ) : (
-            <div className="space-y-2">
-              {groups.map((g) => (
-                <div
-                  key={g.id}
-                  onClick={() => setSelectedId(g.id)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all',
-                    selectedId === g.id
-                      ? 'bg-violet-500/15 border-violet-500/30'
-                      : 'glass border-white/5 hover:border-white/15'
-                  )}
-                >
-                  {editingId === g.id ? (
-                    <input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') renameGroup(g.id); if (e.key === 'Escape') setEditingId(null) }}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
-                      className="flex-1 bg-transparent border-b border-violet-500/50 text-white text-sm focus:outline-none py-0.5"
-                    />
-                  ) : (
-                    <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-violet-200' : 'text-white/70')}>
-                      {g.name}
-                    </span>
-                  )}
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-xs font-mono text-white/25 mr-1">{g.id}</span>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyId(g.id) }}
-                      className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-all"
-                      title="ID kopieren"
-                    >
-                      {copied === g.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                    </button>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditingId(g.id); setEditName(g.name) }}
-                      className="p-1.5 rounded-lg text-white/25 hover:text-violet-400 hover:bg-white/5 transition-all"
-                      title="Umbenennen"
-                    >
-                      <Pencil size={13} />
-                    </button>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); removeGroup(g.id) }}
-                      className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                      title="Gruppe verlassen"
-                    >
-                      <X size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Leaderboard */}
       {selectedId && selectedGroup && (
@@ -512,7 +585,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {!migrationNeeded && !selectedId && !loadingGroups && groups.length === 0 && (
+      {!selectedId && !loadingGroups && groups.length === 0 && (
         <div className="glass rounded-2xl p-10 border border-white/5 text-center text-white/30 space-y-2">
           <Trophy size={40} className="mx-auto opacity-30" />
           <p className="font-semibold">Tritt einer Gruppe bei</p>

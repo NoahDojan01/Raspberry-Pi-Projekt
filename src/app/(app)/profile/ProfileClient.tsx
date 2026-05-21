@@ -26,6 +26,11 @@ interface UserDetails {
     xp_earned: number; completed_at: string; questions_count: number
   }>
 }
+interface GroupMember {
+  rank: number; userId: string; name: string
+  xp: number; level: number; streak: number
+  totalTests: number; bestScore: number; isMe: boolean
+}
 
 interface Props {
   initialName: string
@@ -43,20 +48,28 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
   const [savingEmail, setSavingEmail] = useState(false)
 
   const [favorites, setFavorites] = useState<FavoriteUser[]>([])
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [loadingFavorites, setLoadingFavorites] = useState(true)
+  const [togglingFav, setTogglingFav] = useState<string | null>(null)
 
   const [groups, setGroups] = useState<Array<{ id: string; name: string }>>([])
-
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedFavId, setExpandedFavId] = useState<string | null>(null)
   const [detailsCache, setDetailsCache] = useState<Map<string, UserDetails>>(new Map())
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null)
+
+  // Group members
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
+  const [groupMembersCache, setGroupMembersCache] = useState<Map<string, GroupMember[]>>(new Map())
+  const [loadingGroupMembers, setLoadingGroupMembers] = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/favorites').then(r => r.json()),
       fetch('/api/groups').then(r => r.json()),
     ]).then(([favData, groupData]) => {
-      setFavorites(favData.favorites ?? [])
+      const favList: FavoriteUser[] = favData.favorites ?? []
+      setFavorites(favList)
+      setFavoriteIds(favData.favoriteIds ?? favList.map((f: FavoriteUser) => f.userId))
       setGroups(groupData.groups ?? [])
     }).finally(() => setLoadingFavorites(false))
   }, [])
@@ -91,22 +104,32 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
     setSavingEmail(false)
   }
 
-  async function removeFavorite(userId: string) {
+  async function toggleFavorite(userId: string) {
+    const isFav = favoriteIds.includes(userId)
+    setTogglingFav(userId)
     const res = await fetch('/api/favorites', {
-      method: 'DELETE',
+      method: isFav ? 'DELETE' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     })
+    const data = await res.json()
     if (res.ok) {
-      setFavorites(prev => prev.filter(f => f.userId !== userId))
-      if (expandedId === userId) setExpandedId(null)
-      toast.success('Aus Favoriten entfernt')
+      const newIds: string[] = data.favoriteIds ?? []
+      setFavoriteIds(newIds)
+      if (isFav) {
+        setFavorites(prev => prev.filter(f => f.userId !== userId))
+        if (expandedFavId === userId) setExpandedFavId(null)
+      }
+      toast.success(isFav ? 'Aus Favoriten entfernt' : 'Zu Favoriten hinzugefügt')
+    } else {
+      toast.error(data.message ?? data.error ?? 'Fehler')
     }
+    setTogglingFav(null)
   }
 
-  async function toggleExpanded(userId: string) {
-    if (expandedId === userId) { setExpandedId(null); return }
-    setExpandedId(userId)
+  async function toggleFavDetails(userId: string) {
+    if (expandedFavId === userId) { setExpandedFavId(null); return }
+    setExpandedFavId(userId)
     if (detailsCache.has(userId)) return
     setLoadingDetails(userId)
     const res = await fetch(`/api/users/${userId}`)
@@ -114,6 +137,18 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
     if (res.ok) setDetailsCache(prev => new Map(prev).set(userId, data))
     else toast.error('Details konnten nicht geladen werden')
     setLoadingDetails(null)
+  }
+
+  async function toggleGroupMembers(groupId: string) {
+    if (expandedGroupId === groupId) { setExpandedGroupId(null); return }
+    setExpandedGroupId(groupId)
+    if (groupMembersCache.has(groupId)) return
+    setLoadingGroupMembers(groupId)
+    const res = await fetch(`/api/leaderboard?groupId=${groupId}`)
+    const data = await res.json()
+    if (res.ok) setGroupMembersCache(prev => new Map(prev).set(groupId, data.entries ?? []))
+    else toast.error('Mitglieder konnten nicht geladen werden')
+    setLoadingGroupMembers(null)
   }
 
   return (
@@ -237,7 +272,7 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
           {editingEmail && (
             <p className="text-xs text-amber-400/80 flex items-center gap-1.5 pt-1">
               <Mail size={11} />
-              Nach dem Speichern erhältst du eine Bestätigungs-E-Mail. Erst nach Klick auf den Link wird die Adresse geändert.
+              Du erhältst eine Bestätigungs-E-Mail an deine aktuelle Adresse. Erst nach dem Klick auf den Link wird die Adresse geändert.
             </p>
           )}
         </div>
@@ -275,11 +310,148 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
         </motion.div>
       )}
 
-      {/* Favorites */}
+      {/* Groups with members */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
+        className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4"
+      >
+        <h2 className="font-bold flex items-center gap-2 text-white/80">
+          <Users size={18} className="text-violet-400" />
+          Meine Gruppen
+          {groups.length > 0 && (
+            <span className="text-xs font-mono text-white/30">({groups.length})</span>
+          )}
+        </h2>
+
+        {loadingFavorites ? (
+          <div className="flex items-center gap-2 text-white/30 text-sm py-4">
+            <Loader2 size={14} className="animate-spin" />
+            Lade Gruppen...
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="text-center py-8 space-y-2">
+            <Users size={32} className="mx-auto text-white/10" />
+            <p className="text-white/30 text-sm">Noch keiner Gruppe beigetreten</p>
+            <Link href="/leaderboard" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+              Gruppe beitreten →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {groups.map(g => {
+              const isExpanded = expandedGroupId === g.id
+              const isLoadingThis = loadingGroupMembers === g.id
+              const members = groupMembersCache.get(g.id) ?? []
+
+              return (
+                <div key={g.id} className="glass rounded-2xl border border-white/5 overflow-hidden">
+                  {/* Group header */}
+                  <button
+                    onClick={() => toggleGroupMembers(g.id)}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <div>
+                      <div className="font-semibold text-sm">{g.name}</div>
+                      <div className="text-xs font-mono text-white/25 mt-0.5">{g.id}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {isLoadingThis
+                        ? <Loader2 size={14} className="animate-spin text-white/30" />
+                        : isExpanded
+                          ? <ChevronUp size={14} className="text-white/40" />
+                          : <ChevronDown size={14} className="text-white/40" />
+                      }
+                    </div>
+                  </button>
+
+                  {/* Members */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="border-t border-white/5 px-3 pb-3 pt-2 space-y-1.5">
+                          {members.length === 0 ? (
+                            <p className="text-xs text-white/30 text-center py-3">
+                              Noch keine Mitglieder mit Tests
+                            </p>
+                          ) : (
+                            members.map(member => (
+                              <div
+                                key={member.userId}
+                                className="flex items-center gap-3 px-3 py-2 rounded-xl glass border border-white/5"
+                              >
+                                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/15 flex items-center justify-center text-xs font-black text-violet-300 shrink-0">
+                                  {member.name[0]?.toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-sm font-semibold truncate">{member.name}</span>
+                                    {member.isMe && (
+                                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 shrink-0">Du</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-white/35 mt-0.5">
+                                    <span className="flex items-center gap-0.5">
+                                      <Crown size={9} className="text-violet-400" /> Lv.{member.level}
+                                    </span>
+                                    <span className="flex items-center gap-0.5">
+                                      <Zap size={9} className="text-amber-400" /> {member.xp} XP
+                                    </span>
+                                    <span className="flex items-center gap-0.5">
+                                      <Flame size={9} className="text-orange-400" /> {member.streak}
+                                    </span>
+                                  </div>
+                                </div>
+                                {!member.isMe && (
+                                  <button
+                                    onClick={() => toggleFavorite(member.userId)}
+                                    disabled={togglingFav === member.userId}
+                                    title={favoriteIds.includes(member.userId) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                                    className={cn(
+                                      'p-1.5 rounded-lg transition-all shrink-0',
+                                      favoriteIds.includes(member.userId)
+                                        ? 'text-amber-400 bg-amber-500/10'
+                                        : 'text-white/20 hover:text-amber-400 hover:bg-amber-500/10'
+                                    )}
+                                  >
+                                    {togglingFav === member.userId
+                                      ? <Loader2 size={13} className="animate-spin" />
+                                      : <Star size={13} fill={favoriteIds.includes(member.userId) ? 'currentColor' : 'none'} />
+                                    }
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                          <Link
+                            href="/leaderboard"
+                            className="block text-center text-xs text-violet-400 hover:text-violet-300 transition-colors pt-1"
+                          >
+                            Vollständiges Leaderboard →
+                          </Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Favorites */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
         className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4"
       >
         <h2 className="font-bold flex items-center gap-2 text-white/80">
@@ -300,18 +472,14 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
             <Star size={36} className="mx-auto text-white/10" />
             <p className="text-white/30 text-sm font-medium">Noch keine Favoriten</p>
             <p className="text-white/20 text-xs">
-              Geh zum{' '}
-              <Link href="/leaderboard" className="text-violet-400 hover:text-violet-300 transition-colors">
-                Leaderboard
-              </Link>
-              {' '}und klicke ★ neben einem Nutzer
+              Klicke bei einem Gruppenmitglied auf ★ um es zu favorisieren
             </p>
           </div>
         ) : (
           <div className="space-y-3">
             {favorites.map(fav => {
               const details = detailsCache.get(fav.userId)
-              const isExpanded = expandedId === fav.userId
+              const isExpanded = expandedFavId === fav.userId
               const isLoadingThis = loadingDetails === fav.userId
 
               return (
@@ -342,7 +510,7 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
-                        onClick={() => toggleExpanded(fav.userId)}
+                        onClick={() => toggleFavDetails(fav.userId)}
                         className="flex items-center gap-1 px-3 py-1.5 glass rounded-lg border border-white/10 text-xs text-white/50 hover:text-white/80 transition-colors"
                       >
                         {isLoadingThis
@@ -352,11 +520,15 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                         Details
                       </button>
                       <button
-                        onClick={() => removeFavorite(fav.userId)}
-                        className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                        onClick={() => toggleFavorite(fav.userId)}
+                        disabled={togglingFav === fav.userId}
+                        className="p-1.5 rounded-lg text-amber-400 hover:text-white/40 hover:bg-white/5 transition-all"
                         title="Aus Favoriten entfernen"
                       >
-                        <X size={13} />
+                        {togglingFav === fav.userId
+                          ? <Loader2 size={13} className="animate-spin" />
+                          : <X size={13} />
+                        }
                       </button>
                     </div>
                   </div>
@@ -372,7 +544,6 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                         className="overflow-hidden"
                       >
                         <div className="px-4 pb-4 border-t border-white/5 space-y-3 pt-3">
-                          {/* Stats grid */}
                           <div className="grid grid-cols-3 gap-2">
                             {[
                               { label: 'Ø Score', value: `${Math.round(details.stats?.average_score ?? 0)}%`, color: getScoreColor(details.stats?.average_score ?? 0) },
@@ -386,7 +557,6 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                             ))}
                           </div>
 
-                          {/* Recent sessions */}
                           {details.sessions.length > 0 ? (
                             <div className="space-y-1.5">
                               <div className="text-xs text-white/30 font-medium pt-1">Letzte Tests</div>
@@ -427,48 +597,6 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                 </div>
               )
             })}
-          </div>
-        )}
-      </motion.div>
-
-      {/* Groups */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass rounded-2xl p-6 border border-white/5 space-y-4"
-      >
-        <h2 className="font-bold flex items-center gap-2 text-white/80">
-          <Users size={18} className="text-violet-400" />
-          Meine Gruppen
-        </h2>
-        {groups.length === 0 ? (
-          <div className="text-center py-6 space-y-2">
-            <Users size={28} className="mx-auto text-white/10" />
-            <p className="text-white/30 text-sm">Noch keiner Gruppe beigetreten</p>
-            <Link href="/leaderboard" className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
-              Gruppe beitreten →
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {groups.map(g => (
-              <div
-                key={g.id}
-                className="flex items-center justify-between px-4 py-3 glass rounded-xl border border-white/5"
-              >
-                <div>
-                  <div className="font-semibold text-sm">{g.name}</div>
-                  <div className="text-xs font-mono text-white/25 mt-0.5">{g.id}</div>
-                </div>
-                <Link
-                  href="/leaderboard"
-                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  Leaderboard →
-                </Link>
-              </div>
-            ))}
           </div>
         )}
       </motion.div>

@@ -50,6 +50,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="lg:ml-64 min-h-screen">
         <div className="max-w-6xl mx-auto px-6 py-8">
           {children}
+          <SpeedInsights />
+
         </div>
       </main>
     </div>

@@ -74,7 +74,7 @@ export default function Sidebar({ userName, userLevel, userXP, userStreak }: Sid
 
       {/* User info */}
       <div className="px-4 py-4 border-b border-white/5">
-        <div className="glass rounded-xl p-3 border border-white/5">
+        <Link href="/profile" onClick={() => setMobileOpen(false)} className="block glass rounded-xl p-3 border border-white/5 hover:border-violet-500/30 transition-colors group">
           <div className="flex items-center justify-between mb-2">
             <div>
               <div className="font-semibold text-sm truncate max-w-[120px]">{userName}</div>
@@ -99,7 +99,7 @@ export default function Sidebar({ userName, userLevel, userXP, userStreak }: Sid
               className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
             />
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Nav */}
