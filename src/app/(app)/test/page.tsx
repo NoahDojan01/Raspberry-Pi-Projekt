@@ -118,12 +118,20 @@ export default function TestPage() {
       })
 
       const data = await res.json()
+
+      if (!res.ok) {
+        console.error('Submit error:', data)
+        toast.error(data.error ?? 'Ergebnis konnte nicht gespeichert werden')
+        return
+      }
+
       if (data.sessionId) {
         setSessionId(data.sessionId)
         window.dispatchEvent(new CustomEvent('statsUpdated'))
       }
-    } catch {
-      toast.error('Ergebnis konnte nicht gespeichert werden')
+    } catch (err) {
+      console.error('Submit exception:', err)
+      toast.error('Netzwerkfehler — Ergebnis konnte nicht gespeichert werden')
     } finally {
       setSubmitting(false)
       setTestState('finished')

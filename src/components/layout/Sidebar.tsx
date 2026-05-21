@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, LayoutDashboard, PenLine, Target,
-  Upload, LogOut, Menu, X, Flame, Star, Library, Trophy
+  Upload, LogOut, Menu, X, Flame, Star, Library, Trophy, User
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils/helpers'
@@ -14,6 +14,7 @@ import toast from 'react-hot-toast'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/profile', icon: User, label: 'Profil' },
   { href: '/learn', icon: PenLine, label: 'Lernmodus' },
   { href: '/katalog', icon: Library, label: 'Fragenkatalog' },
   { href: '/test', icon: Target, label: 'Simulationstest' },
@@ -131,8 +132,8 @@ export default function Sidebar({ userName, userLevel, userXP, userStreak }: Sid
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-4 border-t border-white/5">
+      {/* Logout + credits */}
+      <div className="px-3 py-4 border-t border-white/5 space-y-1">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/40 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
@@ -140,6 +141,9 @@ export default function Sidebar({ userName, userLevel, userXP, userStreak }: Sid
           <LogOut size={18} />
           Abmelden
         </button>
+        <p className="text-center text-[10px] text-white/15 pt-1 tracking-wide">
+          Created by Noah Dojan
+        </p>
       </div>
     </div>
   )

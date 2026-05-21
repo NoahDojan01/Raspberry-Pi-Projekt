@@ -1,0 +1,54 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
+
+  const [{ data: profile }, { data: stats }] = await Promise.all([
+    supabase.from('user_profiles').select('name, group_ids, group_names').eq('id', user.id).single(),
+    supabase.from('user_stats')
+      .select('xp, level, streak, total_tests, average_score, best_score, total_questions_answered')
+      .eq('user_id', user.id).single(),
+  ])
+
+  return NextResponse.json({
+    name: profile?.name ?? '',
+    email: user.email ?? '',
+    stats: stats ?? null,
+    group_ids: profile?.group_ids ?? [],
+    group_names: profile?.group_names ?? {},
+  })
+}
+
+export async function PATCH(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Nicht authentifiziert' }, { status: 401 })
+
+  const body = await request.json()
+
+  if (body.name !== undefined) {
+    const name = body.name.trim()
+    if (!name) return NextResponse.json({ error: 'Name darf nicht leer sein' }, { status: 400 })
+
+    const { error } = await supabase.from('user_profiles').update({ name }).eq('id', user.id)
+    if (error) return NextResponse.json({ error: 'Name konnte nicht gespeichert werden' }, { status: 500 })
+    return NextResponse.json({ success: true, message: 'Name gespeichert' })
+  }
+
+  if (body.email !== undefined) {
+    const email = body.email.trim()
+    if (!email) return NextResponse.json({ error: 'E-Mail darf nicht leer sein' }, { status: 400 })
+
+    const { error } = await supabase.auth.updateUser({ email })
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({
+      success: true,
+      message: 'Bestätigungs-E-Mail an die neue Adresse gesendet. Bitte bestätige den Link in der Mail.',
+    })
+  }
+
+  return NextResponse.json({ error: 'Keine gültigen Felder angegeben' }, { status: 400 })
+}

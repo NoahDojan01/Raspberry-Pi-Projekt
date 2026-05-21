@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Users, Plus, X, Loader2, Crown,
-  Flame, Star, Target, Copy, Check, Pencil
+  Flame, Star, Target, Copy, Check, Pencil, AlertTriangle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils/helpers'
@@ -24,12 +24,70 @@ interface LeaderboardEntry {
 
 const GROUP_ID_REGEX = /^[A-Za-z0-9]{8}$/
 
+const MIGRATION_SQL = `ALTER TABLE public.user_profiles
+  ADD COLUMN IF NOT EXISTS group_ids text[] DEFAULT '{}';
+ALTER TABLE public.user_profiles
+  ADD COLUMN IF NOT EXISTS group_names jsonb DEFAULT '{}';
+CREATE INDEX IF NOT EXISTS idx_user_profiles_group_ids
+  ON public.user_profiles USING GIN(group_ids);`
+
+function MigrationBanner({ sql }: { sql: string }) {
+  const [copied, setCopied] = useState(false)
+
+  function copySQL() {
+    navigator.clipboard.writeText(sql)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass rounded-2xl p-6 border border-amber-500/30 bg-amber-500/5 space-y-4"
+    >
+      <div className="flex items-start gap-3">
+        <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
+        <div>
+          <h3 className="font-bold text-amber-300">Datenbank-Migration erforderlich</h3>
+          <p className="text-sm text-white/60 mt-1">
+            Die Gruppen-Funktion benötigt zwei neue Spalten in deiner Supabase-Datenbank.
+            Öffne den <strong className="text-white/80">Supabase SQL Editor</strong> und führe
+            folgenden Code aus:
+          </p>
+        </div>
+      </div>
+      <div className="relative">
+        <pre className="text-xs text-emerald-300 bg-black/40 rounded-xl p-4 overflow-x-auto border border-white/10 leading-relaxed">
+          {sql}
+        </pre>
+        <button
+          onClick={copySQL}
+          className="absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1.5 glass rounded-lg border border-white/10 text-xs text-white/50 hover:text-white/80 transition-all"
+        >
+          {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+          {copied ? 'Kopiert!' : 'Kopieren'}
+        </button>
+      </div>
+      <p className="text-xs text-white/40">
+        Danach einmal die Seite neu laden — dann funktionieren Gruppen auf allen Geräten.
+      </p>
+    </motion.div>
+  )
+}
+
 export default function LeaderboardPage() {
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loadingGroups, setLoadingGroups] = useState(true)
   const [loadingBoard, setLoadingBoard] = useState(false)
+  const [migrationNeeded, setMigrationNeeded] = useState(false)
+  const [migrationSQL, setMigrationSQL] = useState('')
+
+  // Favorites
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([])
+  const [togglingFav, setTogglingFav] = useState<string | null>(null)
 
   // Join form
   const [joinId, setJoinId] = useState('')
@@ -45,14 +103,20 @@ export default function LeaderboardPage() {
   const [copied, setCopied] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/groups')
-      .then((r) => r.json())
-      .then(({ groups: g }) => {
-        const list: Group[] = g ?? []
+    Promise.all([
+      fetch('/api/groups').then(r => r.json()),
+      fetch('/api/favorites').then(r => r.json()),
+    ]).then(([groupData, favData]) => {
+      if (groupData.error === 'migration_needed') {
+        setMigrationNeeded(true)
+        setMigrationSQL(groupData.sql ?? MIGRATION_SQL)
+      } else {
+        const list: Group[] = groupData.groups ?? []
         setGroups(list)
         if (list.length) setSelectedId(list[0].id)
-      })
-      .finally(() => setLoadingGroups(false))
+      }
+      setFavoriteIds(favData.favoriteIds ?? [])
+    }).finally(() => setLoadingGroups(false))
   }, [])
 
   const fetchLeaderboard = useCallback(async (groupId: string) => {
@@ -87,7 +151,12 @@ export default function LeaderboardPage() {
     })
     const data = await res.json()
     if (!res.ok) {
-      toast.error(data.error)
+      if (data.error === 'migration_needed') {
+        setMigrationNeeded(true)
+        setMigrationSQL(data.sql ?? MIGRATION_SQL)
+      } else {
+        toast.error(data.error)
+      }
     } else {
       setGroups(data.groups)
       setSelectedId(id)
@@ -107,7 +176,9 @@ export default function LeaderboardPage() {
       body: JSON.stringify({ groupId: id, name: editName.trim() }),
     })
     const data = await res.json()
-    if (res.ok) {
+    if (!res.ok) {
+      toast.error(data.error ?? 'Fehler beim Umbenennen')
+    } else {
       setGroups(data.groups)
       setEditingId(null)
     }
@@ -120,7 +191,9 @@ export default function LeaderboardPage() {
       body: JSON.stringify({ groupId: id }),
     })
     const data = await res.json()
-    if (res.ok) {
+    if (!res.ok) {
+      toast.error(data.error ?? 'Fehler beim Verlassen')
+    } else {
       setGroups(data.groups)
       if (selectedId === id) {
         setSelectedId(data.groups[0]?.id ?? null)
@@ -134,6 +207,24 @@ export default function LeaderboardPage() {
     navigator.clipboard.writeText(id)
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  async function toggleFavorite(userId: string) {
+    const isFav = favoriteIds.includes(userId)
+    setTogglingFav(userId)
+    const res = await fetch('/api/favorites', {
+      method: isFav ? 'DELETE' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setFavoriteIds(data.favoriteIds ?? [])
+      toast.success(isFav ? 'Aus Favoriten entfernt' : 'Zu Favoriten hinzugefügt')
+    } else {
+      toast.error(data.message ?? data.error ?? 'Fehler')
+    }
+    setTogglingFav(null)
   }
 
   const selectedGroup = groups.find((g) => g.id === selectedId)
@@ -151,151 +242,156 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
+      {/* Migration Banner */}
+      {migrationNeeded && <MigrationBanner sql={migrationSQL} />}
+
       {/* Group management card */}
-      <div className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-bold flex items-center gap-2 text-white/80">
-            <Users size={18} className="text-violet-400" />
-            Meine Gruppen
-          </h2>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-all',
-              showForm
-                ? 'bg-white/10 border-white/20 text-white/60'
-                : 'bg-violet-500/15 border-violet-500/30 text-violet-300 hover:bg-violet-500/20'
-            )}
-          >
-            <Plus size={14} />
-            Gruppe beitreten
-          </button>
-        </div>
-
-        {/* Join form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3 overflow-hidden"
+      {!migrationNeeded && (
+        <div className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold flex items-center gap-2 text-white/80">
+              <Users size={18} className="text-violet-400" />
+              Meine Gruppen
+            </h2>
+            <button
+              onClick={() => setShowForm((v) => !v)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-all',
+                showForm
+                  ? 'bg-white/10 border-white/20 text-white/60'
+                  : 'bg-violet-500/15 border-violet-500/30 text-violet-300 hover:bg-violet-500/20'
+              )}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Gruppenname</label>
-                  <input
-                    value={joinName}
-                    onChange={(e) => setJoinName(e.target.value)}
-                    placeholder="z.B. Jugendrüstzeit 2025"
-                    className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-white/40 mb-1.5">Gruppen-ID (8 Zeichen)</label>
-                  <input
-                    value={joinId}
-                    onChange={(e) => setJoinId(e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8))}
-                    onKeyDown={(e) => e.key === 'Enter' && addGroup()}
-                    placeholder="z.B. FECG2025"
-                    maxLength={8}
-                    className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm font-mono tracking-widest uppercase"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-white/30">
-                Die ID ist der gemeinsame Code — alle, die dieselbe ID eingeben, sehen sich gegenseitig. Der Name ist nur für dich sichtbar.
-              </p>
-              <div className="flex gap-2">
-                <motion.button
-                  onClick={addGroup}
-                  disabled={adding || joinId.length !== 8 || !joinName.trim()}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
-                  Beitreten
-                </motion.button>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white/50 hover:text-white/80 transition-colors"
-                >
-                  Abbrechen
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Group list */}
-        {loadingGroups ? (
-          <div className="flex items-center gap-2 text-white/30 text-sm py-2">
-            <Loader2 size={14} className="animate-spin" />
-            Lade Gruppen...
+              <Plus size={14} />
+              Gruppe beitreten
+            </button>
           </div>
-        ) : groups.length === 0 ? (
-          <p className="text-white/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
-        ) : (
-          <div className="space-y-2">
-            {groups.map((g) => (
-              <div
-                key={g.id}
-                onClick={() => setSelectedId(g.id)}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all',
-                  selectedId === g.id
-                    ? 'bg-violet-500/15 border-violet-500/30'
-                    : 'glass border-white/5 hover:border-white/15'
-                )}
+
+          {/* Join form */}
+          <AnimatePresence>
+            {showForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3 overflow-hidden"
               >
-                {editingId === g.id ? (
-                  <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') renameGroup(g.id); if (e.key === 'Escape') setEditingId(null) }}
-                    onClick={(e) => e.stopPropagation()}
-                    autoFocus
-                    className="flex-1 bg-transparent border-b border-violet-500/50 text-white text-sm focus:outline-none py-0.5"
-                  />
-                ) : (
-                  <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-violet-200' : 'text-white/70')}>
-                    {g.name}
-                  </span>
-                )}
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-xs font-mono text-white/25 mr-1">{g.id}</span>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); copyId(g.id) }}
-                    className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-all"
-                    title="ID kopieren"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1.5">Gruppenname</label>
+                    <input
+                      value={joinName}
+                      onChange={(e) => setJoinName(e.target.value)}
+                      placeholder="z.B. Jugendrüstzeit 2025"
+                      className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-white/40 mb-1.5">Gruppen-ID (8 Zeichen)</label>
+                    <input
+                      value={joinId}
+                      onChange={(e) => setJoinId(e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8))}
+                      onKeyDown={(e) => e.key === 'Enter' && addGroup()}
+                      placeholder="z.B. FECG2025"
+                      maxLength={8}
+                      className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm font-mono tracking-widest uppercase"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-white/30">
+                  Die ID ist der gemeinsame Code — alle, die dieselbe ID eingeben, sehen sich gegenseitig. Der Name ist nur für dich sichtbar.
+                </p>
+                <div className="flex gap-2">
+                  <motion.button
+                    onClick={addGroup}
+                    disabled={adding || joinId.length !== 8 || !joinName.trim()}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {copied === g.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-                  </button>
-
+                    {adding ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+                    Beitreten
+                  </motion.button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setEditingId(g.id); setEditName(g.name) }}
-                    className="p-1.5 rounded-lg text-white/25 hover:text-violet-400 hover:bg-white/5 transition-all"
-                    title="Umbenennen"
+                    onClick={() => setShowForm(false)}
+                    className="px-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white/50 hover:text-white/80 transition-colors"
                   >
-                    <Pencil size={13} />
-                  </button>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeGroup(g.id) }}
-                    className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                    title="Gruppe verlassen"
-                  >
-                    <X size={13} />
+                    Abbrechen
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Group list */}
+          {loadingGroups ? (
+            <div className="flex items-center gap-2 text-white/30 text-sm py-2">
+              <Loader2 size={14} className="animate-spin" />
+              Lade Gruppen...
+            </div>
+          ) : groups.length === 0 ? (
+            <p className="text-white/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
+          ) : (
+            <div className="space-y-2">
+              {groups.map((g) => (
+                <div
+                  key={g.id}
+                  onClick={() => setSelectedId(g.id)}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all',
+                    selectedId === g.id
+                      ? 'bg-violet-500/15 border-violet-500/30'
+                      : 'glass border-white/5 hover:border-white/15'
+                  )}
+                >
+                  {editingId === g.id ? (
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') renameGroup(g.id); if (e.key === 'Escape') setEditingId(null) }}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      className="flex-1 bg-transparent border-b border-violet-500/50 text-white text-sm focus:outline-none py-0.5"
+                    />
+                  ) : (
+                    <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-violet-200' : 'text-white/70')}>
+                      {g.name}
+                    </span>
+                  )}
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-xs font-mono text-white/25 mr-1">{g.id}</span>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); copyId(g.id) }}
+                      className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-all"
+                      title="ID kopieren"
+                    >
+                      {copied === g.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                    </button>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingId(g.id); setEditName(g.name) }}
+                      className="p-1.5 rounded-lg text-white/25 hover:text-violet-400 hover:bg-white/5 transition-all"
+                      title="Umbenennen"
+                    >
+                      <Pencil size={13} />
+                    </button>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeGroup(g.id) }}
+                      className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                      title="Gruppe verlassen"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Leaderboard */}
       {selectedId && selectedGroup && (
@@ -381,13 +477,33 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
 
-                  {/* XP */}
-                  <div className="text-right shrink-0">
-                    <div className="font-black text-violet-400 flex items-center gap-1 justify-end">
-                      <Star size={14} />
-                      {entry.xp} XP
+                  {/* XP + Favorite */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="font-black text-violet-400 flex items-center gap-1 justify-end">
+                        <Star size={14} />
+                        {entry.xp} XP
+                      </div>
+                      <div className="text-xs text-white/40">Level {entry.level}</div>
                     </div>
-                    <div className="text-xs text-white/40">Level {entry.level}</div>
+                    {!entry.isMe && (
+                      <button
+                        onClick={() => toggleFavorite(entry.userId)}
+                        disabled={togglingFav === entry.userId}
+                        title={favoriteIds.includes(entry.userId) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                        className={cn(
+                          'p-2 rounded-xl transition-all',
+                          favoriteIds.includes(entry.userId)
+                            ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10'
+                            : 'text-white/20 hover:text-amber-400 hover:bg-amber-500/10'
+                        )}
+                      >
+                        {togglingFav === entry.userId
+                          ? <Loader2 size={15} className="animate-spin" />
+                          : <Star size={15} fill={favoriteIds.includes(entry.userId) ? 'currentColor' : 'none'} />
+                        }
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -396,7 +512,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {!selectedId && !loadingGroups && groups.length === 0 && (
+      {!migrationNeeded && !selectedId && !loadingGroups && groups.length === 0 && (
         <div className="glass rounded-2xl p-10 border border-white/5 text-center text-white/30 space-y-2">
           <Trophy size={40} className="mx-auto opacity-30" />
           <p className="font-semibold">Tritt einer Gruppe bei</p>
