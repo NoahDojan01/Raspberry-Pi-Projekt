@@ -26,22 +26,24 @@ export async function GET(request: Request) {
     .from('user_stats')
     .select('user_id, xp, level, streak, total_tests, best_score')
     .in('user_id', userIds)
-    .order('xp', { ascending: false })
-    .limit(50)
 
   const nameMap = Object.fromEntries(profiles.map((p) => [p.id, p.name]))
+  const statsMap = Object.fromEntries((stats ?? []).map((s) => [s.user_id, s]))
 
-  const entries = (stats ?? []).map((s, i) => ({
-    rank: i + 1,
-    userId: s.user_id,
-    name: nameMap[s.user_id] ?? 'Unbekannt',
-    xp: s.xp,
-    level: s.level,
-    streak: s.streak,
-    totalTests: s.total_tests,
-    bestScore: s.best_score,
-    isMe: s.user_id === user.id,
-  }))
+  const sorted = userIds
+    .map((id) => ({
+      userId: id,
+      name: nameMap[id] ?? 'Unbekannt',
+      xp: statsMap[id]?.xp ?? 0,
+      level: statsMap[id]?.level ?? 1,
+      streak: statsMap[id]?.streak ?? 0,
+      totalTests: statsMap[id]?.total_tests ?? 0,
+      bestScore: statsMap[id]?.best_score ?? 0,
+      isMe: id === user.id,
+    }))
+    .sort((a, b) => b.xp - a.xp)
+
+  const entries = sorted.map((e, i) => ({ ...e, rank: i + 1 }))
 
   return NextResponse.json({ entries })
 }

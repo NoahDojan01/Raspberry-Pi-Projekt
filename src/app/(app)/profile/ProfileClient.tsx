@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User, Mail, Save, Loader2, Star, ChevronDown, ChevronUp,
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function ProfileClient({ initialName, email, stats }: Props) {
+  const router = useRouter()
   const [nameValue, setNameValue] = useState(initialName)
   const [editingName, setEditingName] = useState(false)
   const [savingName, setSavingName] = useState(false)
@@ -385,7 +387,8 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                             members.map(member => (
                               <div
                                 key={member.userId}
-                                className="flex items-center gap-3 px-3 py-2 rounded-xl glass border border-white/5"
+                                onClick={() => member.isMe ? router.push('/profile') : router.push(`/profile/${member.userId}`)}
+                                className="flex items-center gap-3 px-3 py-2 rounded-xl glass border border-white/5 cursor-pointer hover:border-violet-500/20 transition-all"
                               >
                                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/15 flex items-center justify-center text-xs font-black text-violet-300 shrink-0">
                                   {member.name[0]?.toUpperCase()}
@@ -411,7 +414,7 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
                                 </div>
                                 {!member.isMe && (
                                   <button
-                                    onClick={() => toggleFavorite(member.userId)}
+                                    onClick={(e) => { e.stopPropagation(); toggleFavorite(member.userId) }}
                                     disabled={togglingFav === member.userId}
                                     title={favoriteIds.includes(member.userId) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
                                     className={cn(

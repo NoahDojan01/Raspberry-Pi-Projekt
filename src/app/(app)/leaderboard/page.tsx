@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Users, Plus, X, Loader2, Crown,
@@ -69,6 +70,7 @@ function MigrationBanner({ title, sql }: { title: string; sql: string }) {
 }
 
 export default function LeaderboardPage() {
+  const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
@@ -506,8 +508,9 @@ export default function LeaderboardPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
+                  onClick={() => router.push(entry.isMe ? '/profile' : `/profile/${entry.userId}`)}
                   className={cn(
-                    'glass rounded-2xl p-4 border flex items-center gap-4 transition-all',
+                    'glass rounded-2xl p-4 border flex items-center gap-4 transition-all cursor-pointer hover:border-violet-500/30',
                     entry.isMe ? 'border-violet-500/30 bg-violet-500/5' :
                     entry.rank <= 3 ? 'border-amber-500/15' : 'border-white/5'
                   )}
@@ -561,7 +564,7 @@ export default function LeaderboardPage() {
                     </div>
                     {!entry.isMe && (
                       <button
-                        onClick={() => toggleFavorite(entry.userId)}
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(entry.userId) }}
                         disabled={togglingFav === entry.userId}
                         title={favoriteIds.includes(entry.userId) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
                         className={cn(
