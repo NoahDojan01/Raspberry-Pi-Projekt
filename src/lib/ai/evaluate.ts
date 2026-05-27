@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { EvaluationResult, Question } from '@/types'
+import { extractCountFromQuestion } from '@/lib/utils/answerFormat'
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -7,7 +8,8 @@ const client = new Anthropic({
 
 export async function evaluateAnswer(
   question: Question,
-  userAnswer: string
+  userAnswer: string,
+  approvedVariants?: string[]
 ): Promise<EvaluationResult> {
   const trimmedAnswer = userAnswer.trim()
 
@@ -15,7 +17,20 @@ export async function evaluateAnswer(
     return { score: 0, percentage: 0, feedback: 'Keine Antwort eingegeben.', isCorrect: false }
   }
 
+  // Approved variants always win — check before AI
+  if (approvedVariants && approvedVariants.length > 0) {
+    const normalized = trimmedAnswer.toLowerCase()
+    const match = approvedVariants.find(v => v.toLowerCase().trim() === normalized)
+    if (match) {
+      return { score: 1, percentage: 100, feedback: 'Korrekte alternative Antwort akzeptiert.', isCorrect: true }
+    }
+  }
+
   const specialRules = buildSpecialRules(question)
+
+  const variantsNote = approvedVariants && approvedVariants.length > 0
+    ? `\n**Zusätzlich akzeptierte Antworten (ebenfalls volle Punktzahl):**\n${approvedVariants.map(v => `- ${v}`).join('\n')}\n`
+    : ''
 
   const prompt = `Du bist ein Prüfer für eine religiöse Lehrprüfung. Bewerte die Antwort des Schülers.
 
@@ -23,14 +38,14 @@ export async function evaluateAnswer(
 
 **Erwartete Antwort (Musterlösung):**
 ${question.answer}
-
+${variantsNote}
 **Antwort des Schülers:**
 ${trimmedAnswer}
 
 **Bewertungsregeln:**
-1. Kleine Rechtschreibfehler = volle Punktzahl (z.B. "Antiocha" statt "Antiochia")
+1. TIPPFEHLER & RECHTSCHREIBFEHLER werden KOMPLETT IGNORIERT und geben NIE Punktabzug. Wenn der Inhalt erkennbar richtig ist, gibt es volle Punktzahl – egal wie viele Buchstaben falsch geschrieben sind. Beispiele: "Antiocha" = "Antiochia", "Helich Geist" = "Heiliger Geist", "Auferstehung" = immer korrekt.
 2. Ähnliche Formulierungen = volle oder teilweise Punktzahl
-3. Sinngemäß richtige Antworten = Punkte geben
+3. Sinngemäß richtige Antworten = volle Punkte geben
 4. Bei Aufzählungen: Prüfe ob die geforderte Mindestanzahl vorhanden ist
 5. Bei Zitaten (Psalmen): Sinngemäß richtig und vollständig reicht, wörtlich perfekt = Bonus
 6. Gib konstruktives, motivierendes Feedback auf Deutsch
@@ -75,12 +90,10 @@ function buildSpecialRules(question: Question): string {
   const rules: string[] = []
   let ruleNum = 7
 
-  // Detect "mindestens X" / "mind. X" in question text
-  const minMatch = question.question.match(/mind(?:estens)?\.?\s*(\d+)/i)
-  if (minMatch) {
-    const minCount = minMatch[1]
+  const minCount = extractCountFromQuestion(question.question)
+  if (minCount !== null) {
     rules.push(
-      `${ruleNum++}. MINDESTANZAHL: Die Frage verlangt MINDESTENS ${minCount} Beispiel(e)/Antwort(en). Gibt der Schüler genau ${minCount} korrekte Antworten, ist das 100% richtig. Mehr als ${minCount} Antworten sind kein Bonus, weniger als ${minCount} sind Punktabzug.`
+      `${ruleNum++}. MINDESTANZAHL: Die Frage verlangt MINDESTENS ${minCount} Antwort(en). Gibt der Schüler genau ${minCount} korrekte Antworten, ist das 100% richtig. Mehr als ${minCount} Antworten sind kein Bonus, weniger als ${minCount} sind Punktabzug proportional zur Anzahl.`
     )
   }
 

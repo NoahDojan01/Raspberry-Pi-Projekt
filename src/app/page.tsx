@@ -12,9 +12,9 @@ const features = [
     icon: Brain,
     title: 'KI-Bewertung',
     description: 'Intelligente Auswertung deiner Freitextantworten – kleine Tippfehler kein Problem.',
-    gradient: 'from-violet-500/20 to-purple-500/20',
-    border: 'border-violet-500/30',
-    iconColor: 'text-violet-400',
+    gradient: 'from-accent/20 to-accent/20',
+    border: 'border-accent/25',
+    iconColor: 'text-accent',
   },
   {
     icon: Target,
@@ -36,9 +36,9 @@ const features = [
     icon: Trophy,
     title: 'XP & Level',
     description: 'Sammle Erfahrungspunkte, steige im Level auf und halte deinen Streak aufrecht.',
-    gradient: 'from-amber-500/20 to-orange-500/20',
-    border: 'border-amber-500/30',
-    iconColor: 'text-amber-400',
+    gradient: 'from-accent/20 to-accent/20',
+    border: 'border-accent/30',
+    iconColor: 'text-accent',
   },
   {
     icon: BarChart3,
@@ -52,7 +52,7 @@ const features = [
     icon: Zap,
     title: 'PDF Import',
     description: 'Eigene Fragenkataloge hochladen – KI erkennt Fragen und Antworten automatisch.',
-    gradient: 'from-indigo-500/20 to-violet-500/20',
+    gradient: 'from-accent/20 to-accent/20',
     border: 'border-indigo-500/30',
     iconColor: 'text-indigo-400',
   },
@@ -67,11 +67,11 @@ const stats = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#05030f] text-white overflow-hidden">
+    <div className="min-h-screen bg-[#05030f] text-ui overflow-hidden">
       {/* Background orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[120px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-600/8 blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-accent/10 blur-[120px]" />
+        <div className="absolute top-[40%] right-[-10%] w-[500px] h-[500px] rounded-full bg-accent/5 blur-[100px]" />
         <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] rounded-full bg-indigo-600/8 blur-[100px]" />
       </div>
 
@@ -82,8 +82,8 @@ export default function LandingPage() {
           animate={{ opacity: 1, x: 0 }}
           className="flex items-center gap-3"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg glow-violet">
-            <BookOpen size={18} className="text-white" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-accent flex items-center justify-center shadow-lg glow-accent">
+            <BookOpen size={18} className="text-ui" />
           </div>
           <span className="font-bold text-lg tracking-tight">Jugend Lernapp</span>
         </motion.div>
@@ -95,13 +95,13 @@ export default function LandingPage() {
         >
           <Link
             href="/login"
-            className="px-4 py-2 text-sm text-white/70 hover:text-white transition-colors"
+            className="px-4 py-2 text-sm text-ui/70 hover:text-ui transition-colors"
           >
             Anmelden
           </Link>
           <Link
             href="/register"
-            className="px-4 py-2 text-sm bg-violet-600 hover:bg-violet-500 rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-violet-500/25 hover:-translate-y-0.5"
+            className="px-4 py-2 text-sm bg-accent hover:bg-accent rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5"
           >
             Kostenlos starten
           </Link>
@@ -114,7 +114,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-violet-500/20 text-violet-300 text-sm mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-accent/20 text-accent/70 text-sm mb-8"
         >
           <Sparkles size={14} />
           <span>Mit KI-gestützter Bewertung</span>
@@ -135,7 +135,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-xl text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-xl text-ui/60 max-w-2xl mx-auto mb-10 leading-relaxed"
         >
           Die moderne Lernplattform für deine Jugendmitgliedsprüfung der FECG Speyer/Schwegenheim.
           80 Fragen, KI-Bewertung, Gamification — alles in einem.
@@ -149,14 +149,14 @@ export default function LandingPage() {
         >
           <Link
             href="/register"
-            className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl font-semibold text-lg hover:from-violet-500 hover:to-purple-500 transition-all hover:shadow-2xl hover:shadow-violet-500/30 hover:-translate-y-1"
+            className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-accent to-accent rounded-2xl font-semibold text-lg hover:from-accent hover:to-accent transition-all hover:shadow-2xl hover:shadow-accent/20 hover:-translate-y-1"
           >
             Jetzt kostenlos starten
             <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             href="/login"
-            className="px-8 py-4 glass border border-white/10 rounded-2xl font-medium text-white/80 hover:text-white hover:border-violet-500/30 transition-all hover:-translate-y-1"
+            className="px-8 py-4 glass border border-ui/10 rounded-2xl font-medium text-ui/80 hover:text-ui hover:border-accent/25 transition-all hover:-translate-y-1"
           >
             Bereits registriert
           </Link>
@@ -174,7 +174,7 @@ export default function LandingPage() {
               <div className="text-4xl font-black gradient-text">
                 {stat.value}{stat.suffix}
               </div>
-              <div className="text-sm text-white/50 mt-1">{stat.label}</div>
+              <div className="text-sm text-ui/50 mt-1">{stat.label}</div>
             </div>
           ))}
         </motion.div>
@@ -191,7 +191,7 @@ export default function LandingPage() {
           <h2 className="text-4xl font-black mb-4">
             Alles was du brauchst
           </h2>
-          <p className="text-white/50 text-lg max-w-xl mx-auto">
+          <p className="text-ui/50 text-lg max-w-xl mx-auto">
             Von KI-Bewertung bis zu Gamification — eine vollständige Lernplattform.
           </p>
         </motion.div>
@@ -214,7 +214,7 @@ export default function LandingPage() {
                   <Icon size={22} className={feature.iconColor} />
                 </div>
                 <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed">{feature.description}</p>
+                <p className="text-ui/50 text-sm leading-relaxed">{feature.description}</p>
               </motion.div>
             )
           })}
@@ -227,18 +227,18 @@ export default function LandingPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="glass-strong rounded-3xl p-8 border border-violet-500/20 overflow-hidden relative"
+          className="glass-strong rounded-3xl p-8 border border-accent/20 overflow-hidden relative"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl" />
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-sm text-white/60">Live Demo – Simulationstest</span>
+              <span className="text-sm text-ui/60">Live Demo – Simulationstest</span>
             </div>
             <div className="glass rounded-2xl p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">Mittel • 2 Punkte</span>
-                <span className="text-xs text-white/40">Frage 5 von 20</span>
+                <span className="text-xs text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">Mittel • 2 Punkte</span>
+                <span className="text-xs text-ui/40">Frage 5 von 20</span>
               </div>
               <p className="font-semibold text-lg mb-2">
                 Welche Schritte sind notwendig, um Gott zu erkennen?
@@ -247,16 +247,16 @@ export default function LandingPage() {
                 {[...Array(20)].map((_, i) => (
                   <div
                     key={i}
-                    className={`h-1 flex-1 rounded-full ${i < 5 ? 'bg-violet-500' : 'bg-white/10'}`}
+                    className={`h-1 flex-1 rounded-full ${i < 5 ? 'bg-accent' : 'bg-ui/10'}`}
                   />
                 ))}
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex-1 glass rounded-xl px-4 py-3 text-sm text-white/40 border border-white/5">
+              <div className="flex-1 glass rounded-xl px-4 py-3 text-sm text-ui/40 border border-ui/5">
                 Deine Antwort eingeben...
               </div>
-              <button className="px-4 py-3 bg-violet-600 rounded-xl text-sm font-medium hover:bg-violet-500 transition-colors">
+              <button className="px-4 py-3 bg-accent rounded-xl text-sm font-medium hover:bg-accent transition-colors">
                 Weiter →
               </button>
             </div>
@@ -273,18 +273,18 @@ export default function LandingPage() {
         >
           <div className="flex justify-center mb-6">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={20} className="text-amber-400 fill-amber-400" />
+              <Star key={i} size={20} className="text-accent fill-amber-400" />
             ))}
           </div>
           <h2 className="text-4xl font-black mb-4">
             Bereit für die Prüfung?
           </h2>
-          <p className="text-white/50 mb-8 text-lg">
+          <p className="text-ui/50 mb-8 text-lg">
             Registriere dich kostenlos und beginne sofort zu lernen.
           </p>
           <Link
             href="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl font-bold text-lg hover:from-violet-500 hover:to-purple-500 transition-all hover:shadow-2xl hover:shadow-violet-500/30 hover:-translate-y-1"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-accent to-accent rounded-2xl font-bold text-lg hover:from-accent hover:to-accent transition-all hover:shadow-2xl hover:shadow-accent/20 hover:-translate-y-1"
           >
             <Shield size={20} />
             Kostenlos registrieren
@@ -293,7 +293,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 py-8 px-6 text-center text-sm text-white/30">
+      <footer className="relative z-10 border-t border-ui/5 py-8 px-6 text-center text-sm text-ui/30">
         <p>© 2024 Jugend Lernapp · FECG Speyer/Schwegenheim · Alle Rechte vorbehalten</p>
       </footer>
     </div>

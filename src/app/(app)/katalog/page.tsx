@@ -80,17 +80,17 @@ export default function KatalogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black flex items-center gap-3">
-            <Library className="text-violet-400" />
+            <Library className="text-accent" />
             Fragenkatalog
           </h1>
-          <p className="text-white/50 mt-1">
+          <p className="text-ui/50 mt-1">
             {filtered.length} von {QUESTIONS.length} Fragen · {markedLearned.size} als gelernt markiert
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleShuffle}
-            className="flex items-center gap-2 px-3 py-2 glass rounded-xl border border-white/10 text-sm text-white/60 hover:text-white transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-3 py-2 glass rounded-xl border border-ui/10 text-sm text-ui/60 hover:text-ui transition-all hover:-translate-y-0.5"
           >
             <Shuffle size={16} />
             Mischen
@@ -100,8 +100,8 @@ export default function KatalogPage() {
             className={cn(
               'flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all hover:-translate-y-0.5',
               showFilters
-                ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
-                : 'glass border-white/10 text-white/60 hover:text-white'
+                ? 'bg-accent/15 border-accent/25 text-accent/70'
+                : 'glass border-ui/10 text-ui/60 hover:text-ui'
             )}
           >
             <Filter size={16} />
@@ -109,7 +109,7 @@ export default function KatalogPage() {
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 px-3 py-2 glass rounded-xl border border-white/10 text-sm text-white/60 hover:text-white transition-all hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-3 py-2 glass rounded-xl border border-ui/10 text-sm text-ui/60 hover:text-ui transition-all hover:-translate-y-0.5"
           >
             <RotateCcw size={16} />
           </button>
@@ -123,15 +123,15 @@ export default function KatalogPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass rounded-2xl p-4 border border-white/10 space-y-4"
+            className="glass rounded-2xl p-4 border border-ui/10 space-y-4"
           >
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ui/30" />
               <input
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentIndex(0) }}
                 placeholder="Fragen durchsuchen..."
-                className="w-full pl-9 pr-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none"
+                className="w-full pl-9 pr-4 py-2.5 glass rounded-xl border border-ui/10 text-sm text-ui placeholder-ui/30 focus:border-accent/40 focus:outline-none"
               />
             </div>
             <div className="flex flex-wrap gap-3">
@@ -143,8 +143,8 @@ export default function KatalogPage() {
                     className={cn(
                       'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
                       filterDifficulty === d
-                        ? 'bg-violet-500/20 border-violet-500/40 text-violet-300'
-                        : 'glass border-white/10 text-white/50 hover:text-white/80'
+                        ? 'bg-accent/20 border-accent/30 text-accent/70'
+                        : 'glass border-ui/10 text-ui/50 hover:text-ui/80'
                     )}
                   >
                     {d === 'alle' ? 'Alle' : getDifficultyLabel(d)}
@@ -154,7 +154,7 @@ export default function KatalogPage() {
               <select
                 value={filterCategory}
                 onChange={(e) => { setFilterCategory(e.target.value === 'alle' ? 'alle' : Number(e.target.value)); setCurrentIndex(0) }}
-                className="px-3 py-1.5 glass rounded-lg border border-white/10 text-xs text-white/70 focus:border-violet-500/50 focus:outline-none bg-transparent"
+                className="px-3 py-1.5 glass rounded-lg border border-ui/10 text-xs text-ui/70 focus:border-accent/40 focus:outline-none bg-transparent"
               >
                 <option value="alle" className="bg-slate-900">Alle Kategorien</option>
                 {CATEGORIES.map((c) => (
@@ -170,21 +170,21 @@ export default function KatalogPage() {
 
       {/* Progress bar */}
       <div>
-        <div className="flex items-center justify-between text-xs text-white/40 mb-2">
+        <div className="flex items-center justify-between text-xs text-ui/40 mb-2">
           <span>Fortschritt</span>
           <span>{currentIndex + 1} / {filtered.length}</span>
         </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div className="h-2 bg-ui/5 rounded-full overflow-hidden">
           <motion.div
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.3 }}
-            className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+            className="h-full bg-gradient-to-r from-accent to-accent rounded-full"
           />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="glass rounded-2xl p-12 border border-white/5 text-center text-white/30">
+        <div className="glass rounded-2xl p-12 border border-ui/5 text-center text-ui/30">
           <Search size={40} className="mx-auto mb-4 opacity-50" />
           <p className="text-lg font-semibold">Keine Fragen gefunden</p>
           <p className="text-sm mt-1">Versuche andere Filter oder Suchbegriffe</p>
@@ -198,18 +198,18 @@ export default function KatalogPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25 }}
-              className="glass-strong rounded-3xl p-8 border border-white/10 relative overflow-hidden"
+              className="glass-strong rounded-3xl p-8 border border-ui/10 relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 w-48 h-48 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-48 h-48 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 <span className={cn('px-3 py-1 rounded-full text-xs font-semibold border', getDifficultyColor(current.difficulty))}>
                   {getDifficultyLabel(current.difficulty)} · {current.points} {current.points === 1 ? 'Punkt' : 'Punkte'}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs border border-white/10 text-white/50 glass">
+                <span className="px-3 py-1 rounded-full text-xs border border-ui/10 text-ui/50 glass">
                   {current.category}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs border border-white/10 text-white/40 glass ml-auto">
+                <span className="px-3 py-1 rounded-full text-xs border border-ui/10 text-ui/40 glass ml-auto">
                   Frage {current.id}
                 </span>
                 {markedLearned.has(current.id) && (
@@ -225,9 +225,9 @@ export default function KatalogPage() {
               </h2>
 
               {(current.requiresBrackets || current.requiresOrder) && (
-                <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <Lightbulb size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-300">{current.hint}</p>
+                <div className="mb-4 flex items-start gap-2 p-3 rounded-xl bg-accent/10 border border-accent/20">
+                  <Lightbulb size={16} className="text-accent shrink-0 mt-0.5" />
+                  <p className="text-xs text-accent/70">{current.hint}</p>
                 </div>
               )}
 
@@ -244,7 +244,7 @@ export default function KatalogPage() {
                         <CheckCircle size={16} className="text-emerald-400" />
                         <span className="text-sm font-semibold text-emerald-400">Musterlösung</span>
                       </div>
-                      <div className="text-white/90 leading-relaxed text-sm">
+                      <div className="text-ui/90 leading-relaxed text-sm">
                         {current.answer.split('; ').map((part, i) => (
                           <div key={i} className="flex gap-2 mb-1">
                             <span className="text-emerald-400/60 shrink-0">•</span>
@@ -265,8 +265,8 @@ export default function KatalogPage() {
                   className={cn(
                     'flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all',
                     showAnswer
-                      ? 'bg-white/10 text-white/70 border border-white/10'
-                      : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20'
+                      ? 'bg-ui/10 text-ui/70 border border-ui/10'
+                      : 'bg-gradient-to-r from-accent to-accent text-ui shadow-lg shadow-accent/15'
                   )}
                 >
                   {showAnswer ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -279,7 +279,7 @@ export default function KatalogPage() {
                     'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm border transition-all',
                     markedLearned.has(current.id)
                       ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
-                      : 'glass border-white/10 text-white/50 hover:text-white'
+                      : 'glass border-ui/10 text-ui/50 hover:text-ui'
                   )}
                 >
                   <CheckCircle size={16} />
@@ -294,7 +294,7 @@ export default function KatalogPage() {
             <button
               onClick={goPrev}
               disabled={currentIndex === 0}
-              className="flex items-center gap-2 px-5 py-2.5 glass rounded-xl border border-white/10 text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:border-violet-500/30 hover:-translate-y-0.5"
+              className="flex items-center gap-2 px-5 py-2.5 glass rounded-xl border border-ui/10 text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:border-accent/25 hover:-translate-y-0.5"
             >
               <ChevronLeft size={18} />
               Zurück
@@ -309,7 +309,7 @@ export default function KatalogPage() {
                     onClick={() => { setCurrentIndex(idx); setShowAnswer(false) }}
                     className={cn(
                       'transition-all rounded-full',
-                      idx === currentIndex ? 'w-6 h-2 bg-violet-500' : 'w-2 h-2 bg-white/20 hover:bg-white/40'
+                      idx === currentIndex ? 'w-6 h-2 bg-accent' : 'w-2 h-2 bg-ui/20 hover:bg-ui/40'
                     )}
                   />
                 )
@@ -319,7 +319,7 @@ export default function KatalogPage() {
             <button
               onClick={goNext}
               disabled={currentIndex === filtered.length - 1}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:from-violet-500 hover:to-purple-500 hover:-translate-y-0.5 shadow-lg shadow-violet-500/20"
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-accent to-accent rounded-xl text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:from-accent hover:to-accent hover:-translate-y-0.5 shadow-lg shadow-accent/15"
             >
               Weiter
               <ChevronRight size={18} />

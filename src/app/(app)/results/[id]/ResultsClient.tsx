@@ -63,52 +63,52 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
       <div className="flex items-center gap-4">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-sm text-white/50 hover:text-white transition-colors"
+          className="flex items-center gap-2 text-sm text-ui/50 hover:text-ui transition-colors"
         >
           <ArrowLeft size={16} />
           Dashboard
         </Link>
-        <span className="text-white/20">/</span>
-        <span className="text-sm text-white/60">Testergebnis</span>
+        <span className="text-ui/20">/</span>
+        <span className="text-sm text-ui/60">Testergebnis</span>
       </div>
 
       {/* Score card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-strong rounded-3xl p-8 border border-white/10 text-center relative overflow-hidden"
+        className="glass-strong rounded-3xl p-8 border border-ui/10 text-center relative overflow-hidden"
       >
         <div className="absolute inset-0 pointer-events-none">
           <div className={cn(
             'absolute inset-0 opacity-5',
             percentage >= 80 ? 'bg-emerald-500' :
-            percentage >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+            percentage >= 60 ? 'bg-accent' : 'bg-rose-500'
           )} />
         </div>
         <div className="relative z-10">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Trophy size={28} className="text-amber-400" />
+            <Trophy size={28} className="text-accent" />
             <h1 className="text-3xl font-black">Ergebnis</h1>
           </div>
 
           <div className={`text-7xl font-black mb-2 ${getScoreColor(percentage)}`}>
             {percentage}%
           </div>
-          <p className="text-2xl font-semibold text-white/80 mb-6">{getScoreGrade(percentage)}</p>
+          <p className="text-2xl font-semibold text-ui/80 mb-6">{getScoreGrade(percentage)}</p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { icon: Target, label: 'Punkte', value: `${Math.round(session.total_score * 10) / 10} / ${session.max_score}`, color: 'text-violet-400' },
+              { icon: Target, label: 'Punkte', value: `${Math.round(session.total_score * 10) / 10} / ${session.max_score}`, color: 'text-accent' },
               { icon: CheckCircle2, label: 'Richtig', value: `${correct} / ${answers.length}`, color: 'text-emerald-400' },
-              { icon: Zap, label: 'XP erhalten', value: `+${session.xp_earned}`, color: 'text-amber-400' },
+              { icon: Zap, label: 'XP erhalten', value: `+${session.xp_earned}`, color: 'text-accent' },
               { icon: Calendar, label: 'Abgeschlossen', value: formatDate(session.completed_at).split(',')[0], color: 'text-indigo-400' },
             ].map((stat) => {
               const Icon = stat.icon
               return (
-                <div key={stat.label} className="glass rounded-xl p-3 border border-white/5">
+                <div key={stat.label} className="glass rounded-xl p-3 border border-ui/5">
                   <Icon size={18} className={cn('mx-auto mb-1', stat.color)} />
                   <div className={`text-lg font-black ${stat.color}`}>{stat.value}</div>
-                  <div className="text-xs text-white/40">{stat.label}</div>
+                  <div className="text-xs text-ui/40">{stat.label}</div>
                 </div>
               )
             })}
@@ -133,11 +133,11 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
                 <span className={cn('text-sm font-semibold', getDifficultyColor(diff).split(' ')[0])}>
                   {getDifficultyLabel(diff)}
                 </span>
-                <span className="text-xs text-white/40">{diffAnswers.length} Fragen</span>
+                <span className="text-xs text-ui/40">{diffAnswers.length} Fragen</span>
               </div>
               <div className="text-3xl font-black">{diffPct}%</div>
-              <div className="text-xs text-white/50 mt-1">{diffCorrect}/{diffAnswers.length} richtig</div>
-              <div className="h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
+              <div className="text-xs text-ui/50 mt-1">{diffCorrect}/{diffAnswers.length} richtig</div>
+              <div className="h-1.5 bg-ui/5 rounded-full mt-2 overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -158,10 +158,10 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="glass rounded-2xl p-6 border border-white/5"
+            className="glass rounded-2xl p-6 border border-ui/5"
           >
             <div className="flex items-center gap-2 mb-4">
-              <BarChart3 size={18} className="text-violet-400" />
+              <BarChart3 size={18} className="text-accent" />
               <h3 className="font-bold">Nach Kategorie</h3>
             </div>
             <ResponsiveContainer width="100%" height={240}>
@@ -182,7 +182,7 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="glass rounded-2xl p-6 border border-white/5 lg:col-span-1"
+          className="glass rounded-2xl p-6 border border-ui/5 lg:col-span-1"
         >
           <h3 className="font-bold mb-4">Schnellübersicht</h3>
           <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
@@ -196,7 +196,7 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
                 ) : (
                   <XCircle size={16} className="text-rose-400 shrink-0" />
                 )}
-                <span className="text-white/60 flex-1 truncate">{answer.question_text}</span>
+                <span className="text-ui/60 flex-1 truncate">{answer.question_text}</span>
                 <span className={cn('font-bold shrink-0', getScoreColor(answer.percentage))}>
                   {answer.percentage}%
                 </span>
@@ -220,17 +220,17 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
             className={cn(
               'glass rounded-2xl p-5 border',
               answer.percentage >= 70 ? 'border-emerald-500/15' :
-              answer.percentage > 30 ? 'border-amber-500/15' :
+              answer.percentage > 30 ? 'border-accent/15' :
               'border-rose-500/15'
             )}
           >
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-white/40">#{i + 1}</span>
+                <span className="text-xs text-ui/40">#{i + 1}</span>
                 <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold border', getDifficultyColor(answer.difficulty as 'leicht' | 'mittel' | 'schwer'))}>
                   {getDifficultyLabel(answer.difficulty as 'leicht' | 'mittel' | 'schwer')}
                 </span>
-                <span className="text-xs text-white/40 glass px-2 py-0.5 rounded-full border border-white/5">{answer.category}</span>
+                <span className="text-xs text-ui/40 glass px-2 py-0.5 rounded-full border border-ui/5">{answer.category}</span>
               </div>
               <div className={`font-black text-xl ${getScoreColor(answer.percentage)}`}>
                 {answer.percentage}%
@@ -240,18 +240,18 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
             <p className="font-semibold text-sm mb-3">{answer.question_text}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="glass rounded-xl p-3 border border-white/5">
-                <div className="text-xs text-white/40 mb-1">Deine Antwort</div>
-                <div className="text-sm text-white/80">{answer.user_answer || '(keine Antwort)'}</div>
+              <div className="glass rounded-xl p-3 border border-ui/5">
+                <div className="text-xs text-ui/40 mb-1">Deine Antwort</div>
+                <div className="text-sm text-ui/80">{answer.user_answer || '(keine Antwort)'}</div>
               </div>
               <div className="glass rounded-xl p-3 border border-emerald-500/10 bg-emerald-500/5">
                 <div className="text-xs text-emerald-400 mb-1">Musterlösung</div>
-                <div className="text-sm text-white/80">{answer.expected_answer}</div>
+                <div className="text-sm text-ui/80">{answer.expected_answer}</div>
               </div>
             </div>
 
             {answer.feedback && (
-              <div className="mt-3 text-xs text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2">
+              <div className="mt-3 text-xs text-accent/70 bg-accent/10 border border-accent/20 rounded-xl px-3 py-2">
                 💬 {answer.feedback}
               </div>
             )}
@@ -263,14 +263,14 @@ export default function ResultsClient({ session, answers }: ResultsClientProps) 
       <div className="flex gap-4 pb-8">
         <Link
           href="/test"
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl font-semibold hover:from-violet-500 hover:to-purple-500 transition-all shadow-lg shadow-violet-500/20"
+          className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-accent to-accent rounded-2xl font-semibold hover:from-accent hover:to-accent transition-all shadow-lg shadow-accent/15"
         >
           <Target size={18} />
           Neuer Test
         </Link>
         <Link
           href="/dashboard"
-          className="flex items-center justify-center gap-2 px-6 py-3.5 glass rounded-2xl border border-white/10 font-medium hover:border-violet-500/20 transition-all"
+          className="flex items-center justify-center gap-2 px-6 py-3.5 glass rounded-2xl border border-ui/10 font-medium hover:border-accent/20 transition-all"
         >
           <ArrowLeft size={18} />
           Dashboard

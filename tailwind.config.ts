@@ -7,29 +7,31 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: ['class'],
   theme: {
     extend: {
       colors: {
-        dark: {
-          950: '#05030f',
-          900: '#0a0718',
-          800: '#110e24',
-          700: '#1a1630',
-        },
-        violet: {
-          950: '#1e0750',
+        // Semantic adaptive color: white in dark mode, near-black in light mode
+        // Used as text-ui/50, bg-ui/5, border-ui/10 etc.
+        ui: 'rgb(var(--ui) / <alpha-value>)',
+        // Dynamic accent – all orange/amber UI elements use this
+        accent: 'rgb(var(--accent-rgb) / <alpha-value>)',
+        // Background shades
+        surface: {
+          DEFAULT: 'var(--surface)',
+          raised: 'var(--surface-raised)',
+          overlay: 'var(--surface-overlay)',
         },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'glass': 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'shimmer': 'shimmer 2s linear infinite',
-        'glow': 'glow 2s ease-in-out infinite alternate',
+        'fade-in': 'fadeIn 0.2s ease-out',
       },
       keyframes: {
         float: {
@@ -40,9 +42,9 @@ const config: Config = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
-        glow: {
-          '0%': { boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)' },
-          '100%': { boxShadow: '0 0 40px rgba(139, 92, 246, 0.6), 0 0 80px rgba(139, 92, 246, 0.2)' },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
       backdropBlur: {

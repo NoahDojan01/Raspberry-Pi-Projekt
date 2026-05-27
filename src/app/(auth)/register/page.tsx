@@ -35,7 +35,10 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+      },
     })
 
     if (error) {
@@ -58,39 +61,39 @@ export default function RegisterPage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-md"
     >
-      <div className="glass-strong rounded-3xl p-8 border border-white/10">
+      <div className="glass-strong rounded-3xl p-8 border border-ui/10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black mb-2">Konto erstellen</h1>
-          <p className="text-white/50">Starte deine Lernreise kostenlos</p>
+          <p className="text-ui/50">Starte deine Lernreise kostenlos</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Name</label>
+            <label className="block text-sm font-medium text-ui/70 mb-2">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Dein Name"
               required
-              className="w-full px-4 py-3 glass rounded-xl border border-white/10 text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all"
+              className="w-full px-4 py-3 glass rounded-xl border border-ui/10 text-ui placeholder-ui/30 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">E-Mail</label>
+            <label className="block text-sm font-medium text-ui/70 mb-2">E-Mail</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="deine@email.de"
               required
-              className="w-full px-4 py-3 glass rounded-xl border border-white/10 text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all"
+              className="w-full px-4 py-3 glass rounded-xl border border-ui/10 text-ui placeholder-ui/30 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Passwort</label>
+            <label className="block text-sm font-medium text-ui/70 mb-2">Passwort</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -98,12 +101,12 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 glass rounded-xl border border-white/10 text-white placeholder-white/30 focus:border-violet-500/50 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all pr-12"
+                className="w-full px-4 py-3 glass rounded-xl border border-ui/10 text-ui placeholder-ui/30 focus:border-accent/40 focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all pr-12"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ui/40 hover:text-ui/70 transition-colors"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -115,7 +118,7 @@ export default function RegisterPage() {
                   <div
                     key={req.label}
                     className={`flex items-center gap-2 text-xs transition-colors ${
-                      req.test(password) ? 'text-emerald-400' : 'text-white/30'
+                      req.test(password) ? 'text-emerald-400' : 'text-ui/30'
                     }`}
                   >
                     <CheckCircle2 size={12} />
@@ -131,7 +134,7 @@ export default function RegisterPage() {
             disabled={loading}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
-            className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-white hover:from-violet-500 hover:to-purple-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-violet-500/25 mt-6"
+            className="w-full flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-accent to-accent rounded-xl font-semibold text-ui hover:from-accent hover:to-accent transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-accent/20 mt-6"
           >
             {loading ? (
               <><Loader2 size={18} className="animate-spin" /> Registrieren...</>
@@ -141,9 +144,9 @@ export default function RegisterPage() {
           </motion.button>
         </form>
 
-        <div className="text-center mt-6 text-sm text-white/40">
+        <div className="text-center mt-6 text-sm text-ui/40">
           Bereits registriert?{' '}
-          <Link href="/login" className="text-violet-400 hover:text-violet-300 transition-colors font-medium">
+          <Link href="/login" className="text-accent hover:text-accent transition-colors font-medium">
             Anmelden
           </Link>
         </div>

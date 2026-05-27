@@ -38,31 +38,31 @@ function MigrationBanner({ title, sql }: { title: string; sql: string }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl p-6 border border-amber-500/30 bg-amber-500/5 space-y-4"
+      className="glass rounded-2xl p-6 border border-accent/30 bg-accent/5 space-y-4"
     >
       <div className="flex items-start gap-3">
-        <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
+        <AlertTriangle size={20} className="text-accent shrink-0 mt-0.5" />
         <div>
-          <h3 className="font-bold text-amber-300">Datenbank-Migration erforderlich</h3>
-          <p className="text-sm text-white/60 mt-1">
-            {title} Öffne den <strong className="text-white/80">Supabase SQL Editor</strong> und führe
+          <h3 className="font-bold text-accent/70">Datenbank-Migration erforderlich</h3>
+          <p className="text-sm text-ui/60 mt-1">
+            {title} Öffne den <strong className="text-ui/80">Supabase SQL Editor</strong> und führe
             folgenden Code aus:
           </p>
         </div>
       </div>
       <div className="relative">
-        <pre className="text-xs text-emerald-300 bg-black/40 rounded-xl p-4 overflow-x-auto border border-white/10 leading-relaxed">
+        <pre className="text-xs text-emerald-300 bg-black/40 rounded-xl p-4 overflow-x-auto border border-ui/10 leading-relaxed">
           {sql}
         </pre>
         <button
           onClick={copySQL}
-          className="absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1.5 glass rounded-lg border border-white/10 text-xs text-white/50 hover:text-white/80 transition-all"
+          className="absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1.5 glass rounded-lg border border-ui/10 text-xs text-ui/50 hover:text-ui/80 transition-all"
         >
           {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
           {copied ? 'Kopiert!' : 'Kopieren'}
         </button>
       </div>
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-ui/40">
         Danach einmal die Seite neu laden.
       </p>
     </motion.div>
@@ -262,10 +262,10 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black flex items-center gap-3">
-          <Trophy className="text-violet-400" />
+          <Trophy className="text-accent" />
           Leaderboard
         </h1>
-        <p className="text-white/50 mt-1">
+        <p className="text-ui/50 mt-1">
           Teile eine Gruppen-ID mit Freunden und vergleiche eure Ergebnisse
         </p>
       </div>
@@ -276,10 +276,10 @@ export default function LeaderboardPage() {
       )}
 
       {/* Group management card */}
-      <div className="glass-strong rounded-3xl p-6 border border-white/10 space-y-4">
+      <div className="glass-strong rounded-3xl p-6 border border-ui/10 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-bold flex items-center gap-2 text-white/80">
-            <Users size={18} className="text-violet-400" />
+          <h2 className="font-bold flex items-center gap-2 text-ui/80">
+            <Users size={18} className="text-accent" />
             Meine Gruppen
           </h2>
           <button
@@ -287,8 +287,8 @@ export default function LeaderboardPage() {
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm border transition-all',
               showForm
-                ? 'bg-white/10 border-white/20 text-white/60'
-                : 'bg-violet-500/15 border-violet-500/30 text-violet-300 hover:bg-violet-500/20'
+                ? 'bg-ui/10 border-ui/20 text-ui/60'
+                : 'bg-accent/15 border-accent/25 text-accent/70 hover:bg-accent/20'
             )}
           >
             <Plus size={14} />
@@ -307,7 +307,7 @@ export default function LeaderboardPage() {
             >
               {/* Step 1: enter ID */}
               <div>
-                <label className="block text-xs text-white/40 mb-1.5">
+                <label className="block text-xs text-ui/40 mb-1.5">
                   Gruppen-ID (8 Zeichen)
                 </label>
                 <div className="flex gap-2">
@@ -321,7 +321,7 @@ export default function LeaderboardPage() {
                     placeholder="z.B. FECG2025"
                     maxLength={8}
                     disabled={joinStep === 'joining'}
-                    className="flex-1 px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm font-mono tracking-widest uppercase disabled:opacity-50"
+                    className="flex-1 px-3 py-2.5 glass rounded-xl border border-ui/10 text-ui placeholder-ui/25 focus:border-accent/40 focus:outline-none text-sm font-mono tracking-widest uppercase disabled:opacity-50"
                   />
                   {joinStep !== 'needsName' && (
                     <motion.button
@@ -329,7 +329,7 @@ export default function LeaderboardPage() {
                       disabled={joinStep === 'joining' || joinId.length !== 8}
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                      className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-accent to-accent rounded-xl font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
                       {joinStep === 'joining'
                         ? <Loader2 size={15} className="animate-spin" />
@@ -339,7 +339,7 @@ export default function LeaderboardPage() {
                     </motion.button>
                   )}
                 </div>
-                <p className="text-xs text-white/30 mt-1.5">
+                <p className="text-xs text-ui/30 mt-1.5">
                   Alle, die dieselbe ID eingeben, sehen sich gegenseitig im Leaderboard.
                 </p>
               </div>
@@ -358,17 +358,17 @@ export default function LeaderboardPage() {
                       Neue Gruppe! Du bist der Erste – gib ihr einen Namen:
                     </div>
                     <div>
-                      <label className="block text-xs text-white/40 mb-1.5">Gruppenname</label>
+                      <label className="block text-xs text-ui/40 mb-1.5">Gruppenname</label>
                       <input
                         value={joinName}
                         onChange={(e) => setJoinName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && submitJoin()}
                         placeholder="z.B. Jugendrüstzeit 2025"
                         autoFocus
-                        className="w-full px-3 py-2.5 glass rounded-xl border border-white/10 text-white placeholder-white/25 focus:border-violet-500/50 focus:outline-none text-sm"
+                        className="w-full px-3 py-2.5 glass rounded-xl border border-ui/10 text-ui placeholder-ui/25 focus:border-accent/40 focus:outline-none text-sm"
                       />
                     </div>
-                    <p className="text-xs text-white/30">
+                    <p className="text-xs text-ui/30">
                       Dieser Name ist für alle sichtbar, die derselben Gruppe beitreten.
                     </p>
                   </motion.div>
@@ -382,7 +382,7 @@ export default function LeaderboardPage() {
                     disabled={!joinName.trim()}
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-accent to-accent rounded-xl font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus size={15} />
                     Gruppe erstellen & beitreten
@@ -390,7 +390,7 @@ export default function LeaderboardPage() {
                 )}
                 <button
                   onClick={resetJoinForm}
-                  className="px-4 py-2.5 glass rounded-xl border border-white/10 text-sm text-white/50 hover:text-white/80 transition-colors"
+                  className="px-4 py-2.5 glass rounded-xl border border-ui/10 text-sm text-ui/50 hover:text-ui/80 transition-colors"
                 >
                   Abbrechen
                 </button>
@@ -401,12 +401,12 @@ export default function LeaderboardPage() {
 
         {/* Group list */}
         {loadingGroups ? (
-          <div className="flex items-center gap-2 text-white/30 text-sm py-2">
+          <div className="flex items-center gap-2 text-ui/30 text-sm py-2">
             <Loader2 size={14} className="animate-spin" />
             Lade Gruppen...
           </div>
         ) : groups.length === 0 ? (
-          <p className="text-white/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
+          <p className="text-ui/30 text-sm py-1">Noch keiner Gruppe beigetreten.</p>
         ) : (
           <div className="space-y-2">
             {groups.map((g) => (
@@ -416,8 +416,8 @@ export default function LeaderboardPage() {
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all',
                   selectedId === g.id
-                    ? 'bg-violet-500/15 border-violet-500/30'
-                    : 'glass border-white/5 hover:border-white/15'
+                    ? 'bg-accent/15 border-accent/25'
+                    : 'glass border-ui/5 hover:border-ui/15'
                 )}
               >
                 {editingId === g.id ? (
@@ -427,20 +427,20 @@ export default function LeaderboardPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter') renameGroup(g.id); if (e.key === 'Escape') setEditingId(null) }}
                     onClick={(e) => e.stopPropagation()}
                     autoFocus
-                    className="flex-1 bg-transparent border-b border-violet-500/50 text-white text-sm focus:outline-none py-0.5"
+                    className="flex-1 bg-transparent border-b border-accent/40 text-ui text-sm focus:outline-none py-0.5"
                   />
                 ) : (
-                  <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-violet-200' : 'text-white/70')}>
+                  <span className={cn('flex-1 font-semibold text-sm', selectedId === g.id ? 'text-accent/50' : 'text-ui/70')}>
                     {g.name}
                   </span>
                 )}
 
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-xs font-mono text-white/25 mr-1">{g.id}</span>
+                  <span className="text-xs font-mono text-ui/25 mr-1">{g.id}</span>
 
                   <button
                     onClick={(e) => { e.stopPropagation(); copyId(g.id) }}
-                    className="p-1.5 rounded-lg text-white/25 hover:text-white/60 hover:bg-white/5 transition-all"
+                    className="p-1.5 rounded-lg text-ui/25 hover:text-ui/60 hover:bg-ui/5 transition-all"
                     title="ID kopieren"
                   >
                     {copied === g.id ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
@@ -448,7 +448,7 @@ export default function LeaderboardPage() {
 
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditingId(g.id); setEditName(g.name) }}
-                    className="p-1.5 rounded-lg text-white/25 hover:text-violet-400 hover:bg-white/5 transition-all"
+                    className="p-1.5 rounded-lg text-ui/25 hover:text-accent hover:bg-ui/5 transition-all"
                     title="Umbenennen (für alle sichtbar)"
                   >
                     <Pencil size={13} />
@@ -456,7 +456,7 @@ export default function LeaderboardPage() {
 
                   <button
                     onClick={(e) => { e.stopPropagation(); removeGroup(g.id) }}
-                    className="p-1.5 rounded-lg text-white/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    className="p-1.5 rounded-lg text-ui/20 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
                     title="Gruppe verlassen"
                   >
                     <X size={13} />
@@ -473,30 +473,30 @@ export default function LeaderboardPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-lg flex items-center gap-2">
-              <Trophy size={20} className="text-amber-400" />
+              <Trophy size={20} className="text-accent" />
               {selectedGroup.name}
-              <span className="text-xs font-mono text-white/25 font-normal">{selectedId}</span>
+              <span className="text-xs font-mono text-ui/25 font-normal">{selectedId}</span>
             </h2>
             <button
               onClick={() => fetchLeaderboard(selectedId)}
-              className="text-xs text-white/30 hover:text-white/60 transition-colors"
+              className="text-xs text-ui/30 hover:text-ui/60 transition-colors"
             >
               Aktualisieren
             </button>
           </div>
 
           {loadingBoard ? (
-            <div className="flex items-center justify-center py-16 text-white/30">
+            <div className="flex items-center justify-center py-16 text-ui/30">
               <Loader2 size={28} className="animate-spin" />
             </div>
           ) : entries.length === 0 ? (
-            <div className="glass rounded-2xl p-10 border border-white/5 text-center space-y-2">
-              <Users size={36} className="mx-auto mb-3 text-white/20" />
-              <p className="font-semibold text-white/50">Noch niemand beigetreten</p>
-              <p className="text-sm text-white/30">
-                Teile die ID <span className="font-mono text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-lg">{selectedId}</span> mit deinen Freunden!
+            <div className="glass rounded-2xl p-10 border border-ui/5 text-center space-y-2">
+              <Users size={36} className="mx-auto mb-3 text-ui/20" />
+              <p className="font-semibold text-ui/50">Noch niemand beigetreten</p>
+              <p className="text-sm text-ui/30">
+                Teile die ID <span className="font-mono text-accent bg-accent/10 px-2 py-0.5 rounded-lg">{selectedId}</span> mit deinen Freunden!
               </p>
-              <p className="text-xs text-white/20 pt-1">
+              <p className="text-xs text-ui/20 pt-1">
                 Du erscheinst hier sobald du deinen ersten Test abgeschlossen hast.
               </p>
             </div>
@@ -510,18 +510,18 @@ export default function LeaderboardPage() {
                   transition={{ delay: i * 0.04 }}
                   onClick={() => router.push(entry.isMe ? '/profile' : `/profile/${entry.userId}`)}
                   className={cn(
-                    'glass rounded-2xl p-4 border flex items-center gap-4 transition-all cursor-pointer hover:border-violet-500/30',
-                    entry.isMe ? 'border-violet-500/30 bg-violet-500/5' :
-                    entry.rank <= 3 ? 'border-amber-500/15' : 'border-white/5'
+                    'glass rounded-2xl p-4 border flex items-center gap-4 transition-all cursor-pointer hover:border-accent/25',
+                    entry.isMe ? 'border-accent/25 bg-accent/5' :
+                    entry.rank <= 3 ? 'border-accent/15' : 'border-ui/5'
                   )}
                 >
                   {/* Rank */}
                   <div className={cn(
                     'w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0',
-                    entry.rank === 1 ? 'bg-amber-500/20 text-amber-400 text-lg' :
+                    entry.rank === 1 ? 'bg-accent/20 text-accent text-lg' :
                     entry.rank === 2 ? 'bg-slate-400/15 text-slate-300 text-lg' :
                     entry.rank === 3 ? 'bg-orange-700/15 text-orange-400 text-lg' :
-                    'bg-white/5 text-white/40 text-sm'
+                    'bg-ui/5 text-ui/40 text-sm'
                   )}>
                     {entry.rank <= 3 ? <Crown size={18} /> : `#${entry.rank}`}
                   </div>
@@ -529,22 +529,22 @@ export default function LeaderboardPage() {
                   {/* Name */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={cn('font-bold truncate', entry.isMe ? 'text-violet-300' : 'text-white')}>
+                      <span className={cn('font-bold truncate', entry.isMe ? 'text-accent/70' : 'text-ui')}>
                         {entry.name}
                       </span>
                       {entry.isMe && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 shrink-0">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent/70 border border-accent/25 shrink-0">
                           Du
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-white/40 mt-0.5">
+                    <div className="flex items-center gap-3 text-xs text-ui/40 mt-0.5">
                       <span className="flex items-center gap-1">
                         <Target size={11} />
                         {entry.totalTests} Tests
                       </span>
                       <span className="flex items-center gap-1">
-                        <Flame size={11} className="text-amber-400" />
+                        <Flame size={11} className="text-accent" />
                         {entry.streak}
                       </span>
                       {entry.bestScore > 0 && (
@@ -556,11 +556,11 @@ export default function LeaderboardPage() {
                   {/* XP + Favorite */}
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="text-right">
-                      <div className="font-black text-violet-400 flex items-center gap-1 justify-end">
+                      <div className="font-black text-accent flex items-center gap-1 justify-end">
                         <Star size={14} />
                         {entry.xp} XP
                       </div>
-                      <div className="text-xs text-white/40">Level {entry.level}</div>
+                      <div className="text-xs text-ui/40">Level {entry.level}</div>
                     </div>
                     {!entry.isMe && (
                       <button
@@ -570,8 +570,8 @@ export default function LeaderboardPage() {
                         className={cn(
                           'p-2 rounded-xl transition-all',
                           favoriteIds.includes(entry.userId)
-                            ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10'
-                            : 'text-white/20 hover:text-amber-400 hover:bg-amber-500/10'
+                            ? 'text-accent hover:text-accent bg-accent/10'
+                            : 'text-ui/20 hover:text-accent hover:bg-accent/10'
                         )}
                       >
                         {togglingFav === entry.userId
@@ -589,7 +589,7 @@ export default function LeaderboardPage() {
       )}
 
       {!selectedId && !loadingGroups && groups.length === 0 && (
-        <div className="glass rounded-2xl p-10 border border-white/5 text-center text-white/30 space-y-2">
+        <div className="glass rounded-2xl p-10 border border-ui/5 text-center text-ui/30 space-y-2">
           <Trophy size={40} className="mx-auto opacity-30" />
           <p className="font-semibold">Tritt einer Gruppe bei</p>
           <p className="text-sm">Klick auf "Gruppe beitreten" und gib eine ID ein, die du dir mit Freunden teilst</p>

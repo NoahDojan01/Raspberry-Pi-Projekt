@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { evaluateAnswer } from '@/lib/ai/evaluate'
 import { QUESTIONS } from '@/data/questions'
+import { createAdminClient } from '@/lib/supabase/server'
 import type { Question } from '@/types'
 
 export async function POST(request: Request) {
@@ -24,7 +25,18 @@ export async function POST(request: Request) {
       requiresOrder: requiresOrder || false,
     }
 
-    const result = await evaluateAnswer(questionObj, userAnswer)
+    // Load approved answer variants for this question
+    let approvedVariants: string[] = []
+    if (questionId) {
+      const admin = await createAdminClient()
+      const { data: variants } = await admin
+        .from('approved_answer_variants')
+        .select('variant_text')
+        .eq('question_id', questionId)
+      approvedVariants = (variants ?? []).map((v: { variant_text: string }) => v.variant_text)
+    }
+
+    const result = await evaluateAnswer(questionObj, userAnswer, approvedVariants)
 
     return NextResponse.json({
       score: result.score,
