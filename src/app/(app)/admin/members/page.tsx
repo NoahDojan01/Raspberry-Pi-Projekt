@@ -13,7 +13,7 @@ export default async function AdminMembersPage() {
 
   const { data: profiles } = await admin
     .from('user_profiles')
-    .select('id, name, created_at, is_admin')
+    .select('id, name, created_at, is_admin, banned_until')
     .order('created_at', { ascending: false })
 
   const ids = (profiles ?? []).map(p => p.id)
@@ -44,6 +44,7 @@ export default async function AdminMembersPage() {
     level: statsMap[p.id]?.level ?? 1,
     streak: statsMap[p.id]?.streak ?? 0,
     total_tests: statsMap[p.id]?.total_tests ?? 0,
+    banned_until: (p.banned_until as string | null) ?? null,
   }))
 
   return <AdminMembersClient members={members} isSuperAdmin={result.isSuperAdmin} />

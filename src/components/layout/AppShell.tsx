@@ -32,7 +32,7 @@ export default function AppShell({ children, userName, userLevel, userXP, userSt
           {children}
         </div>
       </main>
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} userName={userName} />
     </div>
   )
 }

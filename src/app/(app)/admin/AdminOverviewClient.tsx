@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, Users, MessageSquarePlus, HelpCircle, AlertCircle, CheckSquare, Bell } from 'lucide-react'
+import { Shield, Users, MessageSquarePlus, HelpCircle, AlertCircle, CheckSquare, Bell, UserCheck, Wrench } from 'lucide-react'
 
 interface Props {
   totalUsers: number
@@ -10,10 +10,11 @@ interface Props {
   openFeedback: number
   totalSessions: number
   pendingDisputes: number
+  pendingNameChanges: number
 }
 
-export default function AdminOverviewClient({ totalUsers, totalFeedback, openFeedback, totalSessions, pendingDisputes }: Props) {
-  const hasPending = openFeedback > 0 || pendingDisputes > 0
+export default function AdminOverviewClient({ totalUsers, totalFeedback, openFeedback, totalSessions, pendingDisputes, pendingNameChanges }: Props) {
+  const hasPending = openFeedback > 0 || pendingDisputes > 0 || pendingNameChanges > 0
 
   const cards = [
     {
@@ -32,6 +33,15 @@ export default function AdminOverviewClient({ totalUsers, totalFeedback, openFee
       sub: 'Ausstehende Einsprüche',
       color: pendingDisputes > 0 ? 'text-amber-400 bg-amber-400/10' : 'text-emerald-400 bg-emerald-400/10',
       badge: pendingDisputes > 0 ? pendingDisputes : undefined,
+    },
+    {
+      href: '/admin/name-changes',
+      icon: UserCheck,
+      label: 'Namen',
+      value: pendingNameChanges,
+      sub: 'Namensänderungen',
+      color: pendingNameChanges > 0 ? 'text-amber-400 bg-amber-400/10' : 'text-emerald-400 bg-emerald-400/10',
+      badge: pendingNameChanges > 0 ? pendingNameChanges : undefined,
     },
     {
       href: '/admin/feedback',
@@ -81,6 +91,25 @@ export default function AdminOverviewClient({ totalUsers, totalFeedback, openFee
               </span>
             </div>
             <div className="divide-y divide-ui/5">
+              {pendingNameChanges > 0 && (
+                <Link
+                  href="/admin/name-changes"
+                  className="flex items-center gap-3 px-5 py-3.5 hover:bg-amber-500/5 transition-colors group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
+                    <UserCheck size={14} className="text-amber-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">Namensänderungen prüfen</div>
+                    <div className="text-xs text-ui/40">
+                      {pendingNameChanges} {pendingNameChanges === 1 ? 'Anfrage wartet' : 'Anfragen warten'} auf Genehmigung
+                    </div>
+                  </div>
+                  <span className="shrink-0 min-w-[1.5rem] h-6 px-1.5 rounded-full bg-amber-500 text-white text-xs font-bold flex items-center justify-center">
+                    {pendingNameChanges}
+                  </span>
+                </Link>
+              )}
               {pendingDisputes > 0 && (
                 <Link
                   href="/admin/disputes"

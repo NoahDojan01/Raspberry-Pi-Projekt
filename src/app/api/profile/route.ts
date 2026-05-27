@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function GET() {
   const supabase = await createClient()
@@ -32,12 +32,20 @@ export async function PATCH(request: Request) {
   const body = await request.json()
 
   if (body.name !== undefined) {
-    const name = body.name.trim()
-    if (!name) return NextResponse.json({ error: 'Name darf nicht leer sein' }, { status: 400 })
+    const newName = body.name.trim()
+    if (!newName) return NextResponse.json({ error: 'Name darf nicht leer sein' }, { status: 400 })
 
-    const { error } = await supabase.from('user_profiles').update({ name }).eq('id', user.id)
-    if (error) return NextResponse.json({ error: 'Name konnte nicht gespeichert werden' }, { status: 500 })
-    return NextResponse.json({ success: true, message: 'Name gespeichert' })
+    const { data: profile } = await supabase.from('user_profiles').select('name').eq('id', user.id).single()
+    const oldName = profile?.name ?? ''
+
+    const admin = await createAdminClient()
+    const { error } = await admin.from('name_change_requests').insert({
+      user_id: user.id,
+      old_name: oldName,
+      new_name: newName,
+    })
+    if (error) return NextResponse.json({ error: 'Anfrage konnte nicht gesendet werden' }, { status: 500 })
+    return NextResponse.json({ success: true, pending: true, message: 'Namensänderung zur Genehmigung eingereicht' })
   }
 
   if (body.email !== undefined) {

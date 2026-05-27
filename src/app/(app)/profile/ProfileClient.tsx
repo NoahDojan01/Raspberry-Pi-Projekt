@@ -49,6 +49,7 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
   const [nameValue, setNameValue] = useState(initialName)
   const [editingName, setEditingName] = useState(false)
   const [savingName, setSavingName] = useState(false)
+  const [namePending, setNamePending] = useState(false)
 
   const [emailValue, setEmailValue] = useState(email)
   const [editingEmail, setEditingEmail] = useState(false)
@@ -123,8 +124,17 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
       body: JSON.stringify({ name: trimmed }),
     })
     const data = await res.json()
-    if (res.ok) { toast.success('Name gespeichert'); setEditingName(false) }
-    else toast.error(data.error)
+    if (res.ok) {
+      if (data.pending) {
+        toast.success('Namensänderung eingereicht – wartet auf Admin-Bestätigung')
+        setNamePending(true)
+      } else {
+        toast.success('Name gespeichert')
+      }
+      setEditingName(false)
+    } else {
+      toast.error(data.error)
+    }
     setSavingName(false)
   }
 
@@ -258,7 +268,14 @@ export default function ProfileClient({ initialName, email, stats }: Props) {
 
         {/* Name */}
         <div className="space-y-1.5">
-          <label className="text-xs text-ui/40 font-medium">Name</label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-ui/40 font-medium">Name</label>
+            {namePending && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/25 font-medium">
+                Ausstehend
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
             <input
               value={nameValue}

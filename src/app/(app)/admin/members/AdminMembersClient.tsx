@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Trash2, Star, Flame, Trophy, ShieldCheck, Shield, ChevronDown, X, Calendar } from 'lucide-react'
+import { Users, Trash2, Star, Flame, Trophy, ShieldCheck, Shield, ChevronDown, X, Calendar, Lock, Unlock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Member {
@@ -16,11 +16,13 @@ interface Member {
   level: number
   streak: number
   total_tests: number
+  banned_until: string | null
 }
 
 type ConfirmAction =
   | { type: 'promote'; member: Member }
   | { type: 'delete'; member: Member }
+  | { type: 'ban'; member: Member }
 
 export default function AdminMembersClient({
   members: initial,
@@ -33,12 +35,23 @@ export default function AdminMembersClient({
   const [expanded, setExpanded] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<ConfirmAction | null>(null)
   const [loading, setLoading] = useState(false)
+  const [banUntil, setBanUntil] = useState('')
 
   async function executeConfirm() {
     if (!confirm) return
     setLoading(true)
     try {
-      if (confirm.type === 'promote') {
+      if (confirm.type === 'ban') {
+        const res = await fetch('/api/admin/users/ban', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: confirm.member.id, bannedUntil: banUntil || null }),
+        })
+        if (!res.ok) throw new Error()
+        const newBannedUntil = banUntil || null
+        setMembers(m => m.map(u => u.id === confirm.member.id ? { ...u, banned_until: newBannedUntil } : u))
+        toast.success(newBannedUntil ? `${confirm.member.name} gesperrt` : `Sperre aufgehoben`)
+      } else if (confirm.type === 'promote') {
         const promote = !confirm.member.is_admin
         const res = await fetch('/api/admin/users/promote', {
           method: 'PATCH',
@@ -123,6 +136,19 @@ export default function AdminMembersClient({
                         <Shield size={15} />
                       </button>
                     )}
+                    {!m.isSuperAdmin && (
+                      <button
+                        onClick={() => { setBanUntil(m.banned_until ? '' : ''); setConfirm({ type: 'ban', member: m }) }}
+                        className={`p-1.5 rounded-lg transition-all ${
+                          m.banned_until && new Date(m.banned_until) > new Date()
+                            ? 'text-rose-400 bg-rose-500/10 hover:bg-rose-500/20'
+                            : 'text-ui/25 hover:text-rose-400 hover:bg-rose-500/10'
+                        }`}
+                        title={m.banned_until && new Date(m.banned_until) > new Date() ? 'Sperre aufheben' : 'Nutzer sperren'}
+                      >
+                        {m.banned_until && new Date(m.banned_until) > new Date() ? <Unlock size={15} /> : <Lock size={15} />}
+                      </button>
+                    )}
                     <button
                       onClick={() => setConfirm({ type: 'delete', member: m })}
                       className="p-1.5 rounded-lg text-ui/25 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
@@ -147,7 +173,14 @@ export default function AdminMembersClient({
                       transition={{ duration: 0.2, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-3 pt-1 grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      <div className="px-4 pb-3 pt-1 space-y-3">
+                        {m.banned_until && new Date(m.banned_until) > new Date() && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400">
+                            <Lock size={12} />
+                            Gesperrt bis {new Date(m.banned_until).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} Uhr
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         {[
                           { icon: <Star size={13} className="text-accent" />, label: 'Level', value: m.level },
                           { icon: <Star size={13} className="text-accent" />, label: 'XP', value: m.xp.toLocaleString('de') },
@@ -160,6 +193,7 @@ export default function AdminMembersClient({
                             <div className="font-semibold text-sm">{value}</div>
                           </div>
                         ))}
+                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -192,10 +226,12 @@ export default function AdminMembersClient({
                 <div className="glass-strong rounded-2xl border border-ui/10 p-6 space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: confirm.type === 'delete' ? 'rgba(244,63,94,0.15)' : 'rgba(var(--accent-rgb),0.15)' }}
+                      style={{ background: confirm.type === 'delete' || confirm.type === 'ban' ? 'rgba(244,63,94,0.15)' : 'rgba(var(--accent-rgb),0.15)' }}
                     >
                       {confirm.type === 'delete'
                         ? <Trash2 size={18} className="text-rose-400" />
+                        : confirm.type === 'ban'
+                        ? <Lock size={18} className="text-rose-400" />
                         : <Shield size={18} className="text-accent" />
                       }
                     </div>
@@ -212,6 +248,10 @@ export default function AdminMembersClient({
                     <h3 className="font-bold text-lg leading-tight">
                       {confirm.type === 'delete'
                         ? 'Nutzer löschen?'
+                        : confirm.type === 'ban'
+                        ? confirm.member.banned_until && new Date(confirm.member.banned_until) > new Date()
+                          ? 'Sperre aufheben?'
+                          : 'Nutzer sperren?'
                         : confirm.member.is_admin
                           ? 'Admin-Rechte entziehen?'
                           : 'Zum Admin ernennen?'
@@ -220,11 +260,27 @@ export default function AdminMembersClient({
                     <p className="text-ui/50 text-sm mt-1">
                       {confirm.type === 'delete'
                         ? <>Der Account von <strong className="text-ui/80">{confirm.member.name}</strong> wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</>
+                        : confirm.type === 'ban'
+                        ? confirm.member.banned_until && new Date(confirm.member.banned_until) > new Date()
+                          ? <><strong className="text-ui/80">{confirm.member.name}</strong> kann die App wieder nutzen.</>
+                          : <><strong className="text-ui/80">{confirm.member.name}</strong> wird bis zum gewählten Zeitpunkt gesperrt.</>
                         : confirm.member.is_admin
                           ? <><strong className="text-ui/80">{confirm.member.name}</strong> verliert den Zugang zum Admin-Bereich.</>
                           : <><strong className="text-ui/80">{confirm.member.name}</strong> bekommt vollen Zugang zum Admin-Bereich.</>
                       }
                     </p>
+                    {confirm.type === 'ban' && !(confirm.member.banned_until && new Date(confirm.member.banned_until) > new Date()) && (
+                      <div className="mt-3">
+                        <label className="block text-xs text-ui/40 mb-1.5">Gesperrt bis</label>
+                        <input
+                          type="datetime-local"
+                          value={banUntil}
+                          onChange={e => setBanUntil(e.target.value)}
+                          min={new Date().toISOString().slice(0, 16)}
+                          className="w-full px-3 py-2 glass rounded-xl border border-ui/10 text-sm focus:outline-none focus:border-accent/40"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2 pt-1">
@@ -239,12 +295,14 @@ export default function AdminMembersClient({
                       onClick={executeConfirm}
                       disabled={loading}
                       className={`flex-1 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                        confirm.type === 'delete'
+                        confirm.type === 'delete' || confirm.type === 'ban'
                           ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 border border-rose-500/20'
                           : 'btn-accent'
                       }`}
                     >
-                      {loading ? '...' : confirm.type === 'delete' ? 'Löschen' : confirm.member.is_admin ? 'Entziehen' : 'Ernennen'}
+                      {loading ? '...' : confirm.type === 'delete' ? 'Löschen' : confirm.type === 'ban'
+                        ? confirm.member.banned_until && new Date(confirm.member.banned_until) > new Date() ? 'Aufheben' : 'Sperren'
+                        : confirm.member.is_admin ? 'Entziehen' : 'Ernennen'}
                     </button>
                   </div>
                 </div>

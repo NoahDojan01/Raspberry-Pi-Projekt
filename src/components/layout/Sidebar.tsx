@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, LayoutDashboard, PenLine, Target,
   Upload, LogOut, Menu, X, Flame, Star, Library, Trophy, User,
-  MessageSquarePlus, Shield, Users, HelpCircle, CheckSquare
+  MessageSquarePlus, Shield, Users, HelpCircle, CheckSquare, UserCheck, Wrench
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils/helpers'
@@ -148,7 +148,9 @@ export default function Sidebar({ userName, userLevel, userXP, userStreak, isAdm
               { href: '/admin/members', icon: Users, label: 'Mitglieder' },
               { href: '/admin/questions', icon: HelpCircle, label: 'Fragen' },
               { href: '/admin/disputes', icon: CheckSquare, label: 'Antworten' },
+              { href: '/admin/name-changes', icon: UserCheck, label: 'Namen' },
               { href: '/admin/feedback', icon: MessageSquarePlus, label: 'Feedback' },
+              { href: '/admin/maintenance', icon: Wrench, label: 'Wartung' },
             ].map((item) => {
               const Icon = item.icon
               const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href + '/'))
