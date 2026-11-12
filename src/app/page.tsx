@@ -126,7 +126,7 @@ export default function LandingPage() {
           transition={{ delay: 0.2 }}
           className="text-5xl md:text-7xl font-black leading-tight mb-6"
         >
-          Lerne smarter.
+          Lerne für die Jugend.
           <br />
           <span className="gradient-text">Wachse geistlich.</span>
         </motion.h1>
@@ -137,8 +137,8 @@ export default function LandingPage() {
           transition={{ delay: 0.3 }}
           className="text-xl text-ui/60 max-w-2xl mx-auto mb-10 leading-relaxed"
         >
-          Die moderne Lernplattform für deine Jugendmitgliedsprüfung der FECG Speyer/Schwegenheim.
-          80 Fragen, KI-Bewertung, Gamification — alles in einem.
+          Die Lernplattform für deine Jugendmitgliedsprüfung der FECG Speyer/Schwegenheim.
+          80 Fragen, mit simulationsmodus, aber auch nur den Katalog — alles in einem.
         </motion.p>
 
         <motion.div
